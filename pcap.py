@@ -1,7 +1,7 @@
 from scapy.all import sniff, wrpcap
 import pyshark
 
-def packet_sniffer(packet):
+def packet_sniffer(packet): this is trap
     print(packet.summary())
     wrpcap('captured_packets.pcap', packet, append=True)
 
