@@ -1,18 +1,110 @@
-from scapy.all import sniff, wrpcap                   # scapy library에서 sniff, wrpcap 함수를 가져옴
-import pyshark                                        # pyshark library를 가져옴
+import sys
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QComboBox, QPushButton, QTextEdit, QVBoxLayout, QWidget
+from PySide6.QtCore import Slot
+from scapy.all import sniff, wrpcap
+import pyshark
+import psutil
 
-def packet_sniffer(packet):                           # packet_sniffer 함수 정의. packet은 함수에 전달되는 매개변수
-    print(packet.summary())                           # 받은 패킷의 요약정보를 출력
-    wrpcap('captured_packets.pcap', packet, append=True)  # '파일명' 파일에 pcap형식으로 패킷을 저장. true로 하면 파일 끝에 추가됨
+class PacketSnifferGUI(QMainWindow):
+    def __init__(self):
+        super().__init__()
 
-def pyshark_sniffer():                                # pyshark_sniffer 함수 정의.
-    capture = pyshark.LiveCapture(interface='ethernet')   # '인터페이스명' 인터페이스에서 실시간으로 패킷캡쳐를 위한 LiveCapture 객체 생성
-    
-    for packet in capture.sniff_continuously():       # capture객체의 sniff_continuously() method를 사용해 패킷을 지속적으로 받음. 패킷은 반복문에서 처리됨
-        print(packet)                                 # 받은 패킷의 정보 출력
-        
-        with open('captured_packets.txt', 'a') as f:  # '파일명'파일을 열고, f라는 이름으로 파일 객체로 사용. a는 파일을 추가 모드로 열고, 이미 파일 존재시 끝에 내용을 추가
-            
-            f.write(str(packet) + '\n')               # 파일에 받은 패킷을 문자열로 변환하여 씀. 개행문자 '\n'을 사용해 각 패킷을 새로운 줄에 저장
+        self.setWindowTitle("Packet Sniffer")
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(300)
 
-sniff(prn=packet_sniffer)                             # scapy의 sniff()함수를 호출하여 네트워크 감시. packet_sniffer 함수가 각 패킷을 처리하고 출력하도록 지정
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QVBoxLayout()
+        central_widget.setLayout(layout)
+
+        self.interface_label = QLabel("Select Interface:")
+        layout.addWidget(self.interface_label)
+
+        self.interface_combobox = QComboBox()
+        layout.addWidget(self.interface_combobox)
+
+        self.method_label = QLabel("Choose the method:")
+        layout.addWidget(self.method_label)
+
+        self.method_combobox = QComboBox()
+        self.method_combobox.addItems(["Scapy", "PyShark"])
+        layout.addWidget(self.method_combobox)
+
+        self.start_button = QPushButton("Start")
+        self.start_button.clicked.connect(self.start_sniffing)
+        layout.addWidget(self.start_button)
+
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.clicked.connect(self.stop_sniffing)
+        self.stop_button.setEnabled(False)
+        layout.addWidget(self.stop_button)
+
+        self.log_label = QLabel("Log:")
+        layout.addWidget(self.log_label)
+
+        self.log_textedit = QTextEdit()
+        layout.addWidget(self.log_textedit)
+
+        self.is_sniffing = False
+        self.selected_interface = None
+        self.selected_method = None
+
+        self.update_interfaces()
+
+    def update_interfaces(self):
+        interfaces = psutil.net_if_addrs().keys()
+        self.interface_combobox.addItems(interfaces)
+
+    @Slot()
+    def start_sniffing(self):
+        if self.is_sniffing:
+            self.log_textedit.append("Sniffing is already started.")
+            return
+
+        self.selected_interface = self.interface_combobox.currentText()
+        self.selected_method = self.method_combobox.currentText()
+
+        if self.selected_method == "Scapy":
+            self.start_scapy_sniffing()
+        elif self.selected_method == "PyShark":
+            self.start_pyshark_sniffing()
+        else:
+            self.log_textedit.append("Invalid method selected.")
+
+    def start_scapy_sniffing(self):
+        self.is_sniffing = True
+        self.start_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+        sniff(prn=self.packet_sniffer, iface=self.selected_interface)
+
+    def start_pyshark_sniffing(self):
+        self.is_sniffing = True
+        self.start_button.setEnabled(False)
+        self.stop_button.setEnabled(True)
+        capture = pyshark.LiveCapture(interface=self.selected_interface)
+        for packet in capture.sniff_continuously():
+            self.log_textedit.append(str(packet))
+
+    @Slot()
+    def stop_sniffing(self):
+        if not self.is_sniffing:
+            self.log_textedit.append("Sniffing is not started.")
+            return
+
+        self.is_sniffing = False
+        self.start_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
+
+    def packet_sniffer(self, packet):
+        self.log_textedit.append(packet.summary())
+        wrpcap('capscapy_packets.pcap', packet, append=True)
+
+def main():
+    app = QApplication(sys.argv)
+    window = PacketSnifferGUI()
+    window.show()
+    sys.exit(app.exec())
+
+if __name__ == "__main__":
+    main()
