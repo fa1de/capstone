@@ -1,19 +1,40 @@
-import matplotlib.pyplot as plt
-from scapy.all import sniff
-from collections import defaultdict
+from scapy.all import sniff, wrpcap
+import pyshark
+import psutil
+from threading import Thread, Event
+import keyboard 
 
-packet_count = defaultdict(int)
+def get_interfaces():
+    return psutil.net_if_addrs().keys()
 
-def packet_callback(packet):
-    if packet.haslayer('IP'):
-        src_ip = packet['IP'].src
-        packet_count[src_ip] += 1
+def packet_sniffer(packet):
+    print(packet.summary())
+    wrpcap('captured_packets.pcap', packet, append=True)
 
-        plt.clf()
-        plt.bar(packet_count.keys(), packet_count.values())
-        plt.xlabel('Source IP')
-        plt.ylabel('Packet Count')
-        plt.title('Real-time Packet Capture')
-        plt.pause(0.1)
+def start_scapy_sniffer(interface, stop_event):
+    def stop_sniffer(packet):
+        return stop_event.is_set() 
+    sniff(prn=packet_sniffer, iface=interface, stop_filter=stop_sniffer)
 
-sniff(prn=packet_callback, store=0)
+if __name__ == "__main__":
+    stop_event = Event() 
+
+    interfaces = get_interfaces()
+    print("Available interfaces: ")
+    for index, interface in enumerate(interfaces):
+        print(f"{index + 1}. {interface}")
+    choice = int(input("Select the interface by number: "))
+    selected_interface = list(interfaces)[choice - 1]
+    
+    capture = pyshark.LiveCapture(interface=selected_interface)
+
+    scapy_thread = Thread(target=start_scapy_sniffer, args=(selected_interface, stop_event))
+    
+    scapy_thread.start()
+
+    print("Press 'q' to stop the capture")
+    keyboard.wait('q') 
+    stop_event.set() 
+
+    scapy_thread.join()
+    print("Packet capture stopped.")
