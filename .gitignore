@@ -1,6 +1,5 @@
-*
 
-!Scripts/
-!Include/
-!Lib/
-!Share/
+
+!pcap.py
+!test.py
+!test2.py
