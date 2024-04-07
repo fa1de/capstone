@@ -21,19 +21,16 @@ def packet_sniffer(packet):
     if matches_regex(packet):
         detailed_info = extract_detailed_info(packet)
         protocol_info.update(detailed_info)
-
-    analyze_and_send(protocol_info)
+    analyze_and_send(protocol_info)     
 
 def matches_regex(packet):
-    if packet.haslayer('Raw'):
-        payload = packet['Raw'].load.decode(errors='ignore')
-        return any(pattern.search(payload) for pattern in compiled_patterns)
-    return False
+    packet_data = str(packet)
+    return any(pattern.search(packet_data) for pattern in compiled_patterns)
 
 def extract_detailed_info(packet):
     detailed_info = {}
-    if packet.haslayer('Raw'):
-        detailed_info['payload'] = packet['Raw'].load.decode(errors='ignore')
+    packet_data = str(packet)
+    detailed_info['packet_data'] = packet_data
     return detailed_info
 
 def extract_protocol_info(packet):
@@ -118,8 +115,6 @@ def extract_ssh_info(packet):
     ssh_info['algorithm'] = ssh_layer.encryption_algorithms_client_to_server.decode('utf-8')
     ssh_info['username'] = ssh_layer.user.decode('utf-8')
     return ssh_info
-
-    return protocol_info if protocol_info else None
 
 def analyze_and_send(protocol_info):
     server_address = ('B_SERVER_IP', B_SERVER_PORT)
