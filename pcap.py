@@ -3,35 +3,13 @@ from scapy.all import sniff
 from threading import Thread, Event
 import keyboard
 import psutil
-import re
-
-def load_patterns_from_file(file_path):
-    with open(file_path, 'r') as file:
-        patterns = [line.strip() for line in file.readlines()]
-    return [re.compile(pattern) for pattern in patterns]
-
-compiled_patterns = load_patterns_from_file('정규표현식파일.txt')
 
 def get_interfaces():
     return psutil.net_if_addrs().keys()
 
 def packet_sniffer(packet):
     protocol_info = extract_protocol_info(packet)
-
-    if matches_regex(packet):
-        detailed_info = extract_detailed_info(packet)
-        protocol_info.update(detailed_info)
     analyze_and_send(protocol_info)     
-
-def matches_regex(packet):
-    packet_data = str(packet)
-    return any(pattern.search(packet_data) for pattern in compiled_patterns)
-
-def extract_detailed_info(packet):
-    detailed_info = {}
-    packet_data = str(packet)
-    detailed_info['packet_data'] = packet_data
-    return detailed_info
 
 def extract_protocol_info(packet):
     protocol_info = {}
@@ -56,6 +34,8 @@ def extract_protocol_info(packet):
         
     if packet.haslayer('SSH'):
         protocol_info.update(extract_ssh_info(packet))
+
+    protocol_info['packet_data'] = packet.show(dump=True)
 
     return protocol_info if protocol_info else None
 
@@ -117,7 +97,7 @@ def extract_ssh_info(packet):
     return ssh_info
 
 def analyze_and_send(protocol_info):
-    server_address = ('B_SERVER_IP', B_SERVER_PORT)
+    server_address = ('127.0.0.1', 8080)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             s.connect(server_address)
@@ -148,4 +128,4 @@ if __name__ == "__main__":
     stop_event.set()
 
     sniffer_thread.join()
-    print("Packet capture stopped.") 
+    print("Packet capture stopped.")
