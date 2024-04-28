@@ -11,6 +11,8 @@ logging.basicConfig(filename='packet_log.txt', level=logging.INFO, format='%(asc
 patterns = []
 redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
+django_server_url = 'http://your-django-server.com'
+
 def load_patterns():
     with open('RE.py', 'r') as file:
         for pattern in file:
@@ -56,6 +58,8 @@ def process_packets(packets):
         if any(pattern.search(packet['data']) for pattern in patterns):
             matched_packets.append(packet)
             logging.info(f"Matched packet: {packet}")
+            send_notification_to_django("Suspicious packet detected", '/api/notify')
+
         else:
             unmatched_packets.append(packet)
 
@@ -64,9 +68,16 @@ def process_packets(packets):
     if unmatched_packets:
         send_to_django(unmatched_packets, '/api/unmatched_packets')
 
+def send_notification_to_django(message, endpoint):
+    try:
+        response = requests.post(f'{django_server_url}{endpoint}', json={'message': message})
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to send notification to Django server: {e}")
+
 def send_to_django(packets, endpoint):
     try:
-        response = requests.post(f'http://your-django-server.com{endpoint}', json={'packets': packets})
+        response = requests.post(f'{django_server_url}{endpoint}', json={'packets': packets})
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         print(f"Failed to send packets to Django server: {e}")
@@ -82,8 +93,8 @@ def monitor_traffic(ip_address):
 
 def start_server():
     load_patterns()
-    server_host = '127.0.0.1'  
-    server_port = 8080  
+    server_host = '192.168.0.46'  
+    server_port = 8000
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((server_host, server_port))
     server_socket.listen(5)
