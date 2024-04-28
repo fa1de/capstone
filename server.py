@@ -11,7 +11,7 @@ logging.basicConfig(filename='packet_log.txt', level=logging.INFO, format='%(asc
 patterns = []
 redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
-django_server_url = 'http://your-django-server.com'
+django_server_url = '192.168.0.46'
 
 def load_patterns():
     with open('RE.py', 'r') as file:
