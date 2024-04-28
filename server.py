@@ -7,7 +7,7 @@ import requests
 patterns = []
 
 def load_patterns():
-    with open('정규표현식.txt', 'r') as file:
+    with open('RE.py', 'r') as file:
         for pattern in file:
             patterns.append(re.compile(pattern.strip()))
 
