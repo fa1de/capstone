@@ -11,10 +11,10 @@ logging.basicConfig(filename='packet_log.txt', level=logging.INFO, format='%(asc
 patterns = []
 redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
-django_server_url = '192.168.0.46'
+django_server_url = '127.0.0.1'
 
 def load_patterns():
-    with open('RE.py', 'r') as file:
+    with open('rel.py', 'r') as file:
         for pattern in file:
             patterns.append(re.compile(pattern.strip()))
 
@@ -93,7 +93,7 @@ def monitor_traffic(ip_address):
 
 def start_server():
     load_patterns()
-    server_host = '192.168.0.46'  
+    server_host = '127.0.0.1'  
     server_port = 8000
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((server_host, server_port))

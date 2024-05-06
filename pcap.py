@@ -97,7 +97,7 @@ def extract_ssh_info(packet):
     return ssh_info
 
 def analyze_and_send(protocol_info):
-    server_address = ('192.168.0.46', 8000)
+    server_address = ('127.0.0.1', 8000)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         try:
             s.connect(server_address)
