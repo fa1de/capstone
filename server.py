@@ -1,47 +1,47 @@
-import socket
 import threading
-import json
 import re
 import requests
-import redis
 import logging
+import socket
+import json
+import signal
+from collections import defaultdict
+
+B_SERVER_ADDRESS = '127.0.0.1'
+B_SERVER_PORT = 8001
 
 logging.basicConfig(filename='packet_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 patterns = []
-redis_client = redis.Redis(host='localhost', port=6379, db=0)
 
-django_server_url = '127.0.0.1'
+django_server_url = 'http://127.0.0.1:8000'
+
+protocol_packet_count = defaultdict(int)
 
 def load_patterns():
-    with open('rel.py', 'r') as file:
+    with open('rule.py', 'r', encoding='utf-8') as file:
         for pattern in file:
             patterns.append(re.compile(pattern.strip()))
 
 def handle_client(client_socket, client_address):
-    ip_address = client_address[0]
-   
-    if redis_client.get(f"blacklist:{ip_address}"):
-        print(f"Blocked IP: {ip_address}")
-        client_socket.close()
-        return
-
     try:
         request = client_socket.recv(4096)
         if not request:
             raise ValueError("Empty request received")
 
         data = json.loads(request.decode())
-        if 'packets' not in data or not isinstance(data['packets'], list):
+        if 'packet_data' not in data:
             raise ValueError("Invalid packets data format")
-  
-        process_packets(data['packets'])
-  
+
+        matched_packets, unmatched_packets = process_packets([data])
+
+        send_to_django(matched_packets, '/api/matched_packets')
+        send_to_django(unmatched_packets, '/api/unmatched_packets')
+
         client_socket.send("Data processed and sent to Django server.".encode())
         
     except Exception as e:
         print(f"Error: {e}")
-        redis_client.setex(f"blacklist:{ip_address}", 3600, 'blocked')
 
     finally:
         client_socket.close()
@@ -51,22 +51,27 @@ def process_packets(packets):
     unmatched_packets = []
 
     for packet in packets:
-        if not isinstance(packet, dict) or 'data' not in packet:
+        if not isinstance(packet, dict) or 'packet_data' not in packet:
             print("Invalid packet format:", packet)
             continue
 
-        if any(pattern.search(packet['data']) for pattern in patterns):
+        matched = False
+        matched_pattern = None 
+        
+        for pattern in patterns:
+            if pattern.search(packet['packet_data']):
+                matched = True
+                matched_pattern = pattern.pattern
+        
+        if matched:
             matched_packets.append(packet)
-            logging.info(f"Matched packet: {packet}")
+            logging.info(f"Matched packet data: {packet['packet_data']}")
+            logging.info(f"Matched with pattern: {matched_pattern}")
             send_notification_to_django("Suspicious packet detected", '/api/notify')
-
         else:
             unmatched_packets.append(packet)
 
-    if matched_packets:
-        send_to_django(matched_packets, '/api/matched_packets')
-    if unmatched_packets:
-        send_to_django(unmatched_packets, '/api/unmatched_packets')
+    return matched_packets, unmatched_packets
 
 def send_notification_to_django(message, endpoint):
     try:
@@ -82,33 +87,26 @@ def send_to_django(packets, endpoint):
     except requests.exceptions.RequestException as e:
         print(f"Failed to send packets to Django server: {e}")
 
-def monitor_traffic(ip_address):
-    current_count = redis_client.incr(ip_address)
-    if current_count == 1:
-        redis_client.expire(ip_address, 10)
-
-    if current_count > 100:
-        redis_client.setex(f"blacklist:{ip_address}", 3600, "true")
-        print(f"DDOS detected, IP blocked: {ip_address}")
-
 def start_server():
     load_patterns()
-    server_host = '127.0.0.1'  
-    server_port = 8000
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((server_host, server_port))
+    server_socket.bind((B_SERVER_ADDRESS, B_SERVER_PORT))
     server_socket.listen(5)
-    print(f"Server listening on {server_host}:{server_port}")
+    print(f"Server listening on {B_SERVER_ADDRESS}:{B_SERVER_PORT}")
 
     try:
         while True:
             client_socket, client_address = server_socket.accept()
             client_handler = threading.Thread(target=handle_client, args=(client_socket, client_address))
             client_handler.start()
-            monitor_traffic(client_address[0])
     except KeyboardInterrupt:
         print("Server shutting down...")
         server_socket.close()
 
+def sigint_handler(signal, frame):
+    print("Received SIGINT, shutting down server...")
+    exit(0)
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, sigint_handler)
     start_server()

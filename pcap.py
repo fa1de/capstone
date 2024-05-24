@@ -1,25 +1,46 @@
-import socket
 from scapy.all import sniff
 from threading import Thread, Event
 import keyboard
 import psutil
+import time
+import socket
+import json
 
 def get_interfaces():
     return psutil.net_if_addrs().keys()
 
+packet ={}
+
 def packet_sniffer(packet):
     protocol_info = extract_protocol_info(packet)
-    analyze_and_send(protocol_info)     
-
+    if protocol_info:
+        send_packet_to_server(protocol_info)     
+        
 def extract_protocol_info(packet):
     protocol_info = {}
 
     if 'IP' in packet:
         protocol_info.update(extract_ip_info(packet))
-    
-    if 'TCP' in packet or 'UDP' in packet:
+        protocol_info['protocol'] = packet['IP'].proto 
+
+    if packet.haslayer('TCP'):
+        protocol_info['protocol_name'] = 'TCP'
+    elif packet.haslayer('UDP'):
+        protocol_info['protocol_name'] = 'UDP'
+    elif packet.haslayer('ICMP'):
+        protocol_info['protocol_name'] = 'ICMP'
+    elif packet.haslayer('DNS'):
+        protocol_info['protocol_name'] = 'DNS'
+    elif packet.haslayer('HTTP'):
+        protocol_info['protocol_name'] = 'HTTP'
+    elif packet.haslayer('FTP'):
+        protocol_info['protocol_name'] = 'FTP'
+    elif packet.haslayer('SSH'):
+        protocol_info['protocol_name'] = 'SSH'
+
+    if packet.haslayer('TCP') or packet.haslayer('UDP'):
         protocol_info.update(extract_transport_info(packet))
-    
+
     if packet.haslayer('ICMP'):
         protocol_info.update(extract_icmp_info(packet))
 
@@ -28,10 +49,10 @@ def extract_protocol_info(packet):
 
     if packet.haslayer('HTTP'):
         protocol_info.update(extract_http_info(packet))
-        
+
     if packet.haslayer('FTP'):
         protocol_info.update(extract_ftp_info(packet))
-        
+
     if packet.haslayer('SSH'):
         protocol_info.update(extract_ssh_info(packet))
 
@@ -95,16 +116,21 @@ def extract_ssh_info(packet):
     ssh_info['algorithm'] = ssh_layer.encryption_algorithms_client_to_server.decode('utf-8')
     ssh_info['username'] = ssh_layer.user.decode('utf-8')
     return ssh_info
+   
+B_SERVER_ADDRESS = '127.0.0.1'
+B_SERVER_PORT = 8001
 
-def analyze_and_send(protocol_info):
-    server_address = ('127.0.0.1', 8000)
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.connect(server_address)
-            message = f"{protocol_info}"
+def send_packet_to_server(packet_info):
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((B_SERVER_ADDRESS, B_SERVER_PORT))
+            message = json.dumps(packet_info)
             s.sendall(message.encode())
-        except Exception as e:
-            print("Error while sending packet to server:", e)
+            print("Packet information sent to B server successfully.")
+            time.sleep(10) 
+    except Exception as e:
+        print("Error while sending packet information to B server:", e)
+
 
 def start_sniffer(interface, stop_event):
     def stop_sniffer(packet):
