@@ -2,14 +2,13 @@ from scapy.all import sniff
 from threading import Thread, Event
 import keyboard
 import psutil
-import time
 import socket
 import json
+import subprocess
+import time
 
 def get_interfaces():
     return psutil.net_if_addrs().keys()
-
-packet ={}
 
 def packet_sniffer(packet):
     protocol_info = extract_protocol_info(packet)
@@ -118,7 +117,7 @@ def extract_ssh_info(packet):
     return ssh_info
    
 B_SERVER_ADDRESS = '127.0.0.1'
-B_SERVER_PORT = 8001
+B_SERVER_PORT = 8002
 
 def send_packet_to_server(packet_info):
     try:
@@ -126,18 +125,21 @@ def send_packet_to_server(packet_info):
             s.connect((B_SERVER_ADDRESS, B_SERVER_PORT))
             message = json.dumps(packet_info)
             s.sendall(message.encode())
-            print("Packet information sent to B server successfully.")
-            time.sleep(10) 
+            print("Packet information sent to B server successfully.") 
     except Exception as e:
         print("Error while sending packet information to B server:", e)
-
-
+        
 def start_sniffer(interface, stop_event):
     def stop_sniffer(packet):
         return stop_event.is_set()
     sniff(prn=packet_sniffer, iface=interface, stop_filter=stop_sniffer)
 
 if __name__ == "__main__":
+
+    server_process = subprocess.Popen(['python', 'server.py'])
+    
+    time.sleep(5)
+
     stop_event = Event()
 
     interfaces = get_interfaces()
@@ -155,3 +157,6 @@ if __name__ == "__main__":
 
     sniffer_thread.join()
     print("Packet capture stopped.")
+    
+    server_process.terminate()
+    print("Server process terminated.")

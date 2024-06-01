@@ -8,7 +8,7 @@ import signal
 from collections import defaultdict
 
 B_SERVER_ADDRESS = '127.0.0.1'
-B_SERVER_PORT = 8001
+B_SERVER_PORT = 8002
 
 logging.basicConfig(filename='packet_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
