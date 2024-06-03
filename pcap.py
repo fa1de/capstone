@@ -60,62 +60,64 @@ def extract_protocol_info(packet):
     return protocol_info if protocol_info else None
 
 def extract_ip_info(packet):
-    ip_info = {}
-    ip_info['source_ip'] = packet['IP'].src
-    ip_info['destination_ip'] = packet['IP'].dst
-    return ip_info
+    return {
+        'source_ip': packet['IP'].src,
+        'destination_ip': packet['IP'].dst
+    }
 
 def extract_transport_info(packet):
     transport_info = {}
-    if 'TCP' in packet:
-        transport_info['source_port'] = packet.sport
-        transport_info['destination_port'] = packet.dport
-    elif 'UDP' in packet:
-        transport_info['source_port'] = packet.sport
-        transport_info['destination_port'] = packet.dport
+    if packet.haslayer('TCP'):
+        transport_info['source_port'] = packet['TCP'].sport
+        transport_info['destination_port'] = packet['TCP'].dport
+    elif packet.haslayer('UDP'):
+        transport_info['source_port'] = packet['UDP'].sport
+        transport_info['destination_port'] = packet['UDP'].dport
     return transport_info
 
 def extract_icmp_info(packet):
-    icmp_info = {}
     icmp_layer = packet['ICMP']
-    icmp_info['type'] = icmp_layer.type
-    icmp_info['code'] = icmp_layer.code
-    icmp_info['checksum'] = icmp_layer.chksum
-    icmp_info['id'] = icmp_layer.id
-    icmp_info['sequence'] = icmp_layer.seq
-    return icmp_info
+    return {
+        'type': icmp_layer.type,
+        'code': icmp_layer.code,
+        'checksum': icmp_layer.chksum,
+        'id': icmp_layer.id,
+        'sequence': icmp_layer.seq
+    }
 
 def extract_dns_info(packet):
     dns_info = {}
-    dns_info['dns_query'] = packet['DNS'].qd.qname.decode('utf-8')
+    if packet['DNS'].qd:
+        dns_info['dns_query'] = packet['DNS'].qd.qname.decode('utf-8')
     if packet['DNS'].an:
-        dns_info['dns_response'] = packet['DNS'].an.rdata.decode('utf-8')
+        # rdata가 이미 문자열인 경우 decode 제거
+        dns_info['dns_response'] = packet['DNS'].an.rdata if isinstance(packet['DNS'].an.rdata, str) else packet['DNS'].an.rdata.decode('utf-8')
     return dns_info
 
 def extract_http_info(packet):
-    http_info = {}
     http_layer = packet['HTTP']
-    http_info['method'] = http_layer.Method.decode('utf-8')
-    http_info['uri'] = http_layer.Path.decode('utf-8')
-    http_info['version'] = http_layer.Http_Version.decode('utf-8')
-    return http_info
+    return {
+        'method': http_layer.Method.decode('utf-8'),
+        'uri': http_layer.Path.decode('utf-8'),
+        'version': http_layer.Http_Version.decode('utf-8')
+    }
 
 def extract_ftp_info(packet):
-    ftp_info = {}
     ftp_layer = packet['FTP']
-    ftp_info['command'] = ftp_layer.Command.decode('utf-8')
-    ftp_info['username'] = ftp_layer.Field_A.decode('utf-8')
-    ftp_info['password'] = ftp_layer.Field_B.decode('utf-8')
-    return ftp_info
+    return {
+        'command': ftp_layer.Command.decode('utf-8'),
+        'username': ftp_layer.Field_A.decode('utf-8'),
+        'password': ftp_layer.Field_B.decode('utf-8')
+    }
 
 def extract_ssh_info(packet):
-    ssh_info = {}
     ssh_layer = packet['SSH']
-    ssh_info['version'] = ssh_layer.kex_algorithms.decode('utf-8')
-    ssh_info['algorithm'] = ssh_layer.encryption_algorithms_client_to_server.decode('utf-8')
-    ssh_info['username'] = ssh_layer.user.decode('utf-8')
-    return ssh_info
-   
+    return {
+        'version': ssh_layer.kex_algorithms.decode('utf-8'),
+        'algorithm': ssh_layer.encryption_algorithms_client_to_server.decode('utf-8'),
+        'username': ssh_layer.user.decode('utf-8')
+    }
+
 B_SERVER_ADDRESS = '127.0.0.1'
 B_SERVER_PORT = 8002
 
@@ -135,9 +137,7 @@ def start_sniffer(interface, stop_event):
     sniff(prn=packet_sniffer, iface=interface, stop_filter=stop_sniffer)
 
 if __name__ == "__main__":
-
     server_process = subprocess.Popen(['python', 'server.py'])
-    
     time.sleep(5)
 
     stop_event = Event()

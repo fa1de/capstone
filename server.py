@@ -19,9 +19,17 @@ django_server_url = 'http://127.0.0.1:8000'
 protocol_packet_count = defaultdict(int)
 
 def load_patterns():
-    with open('rule.py', 'r', encoding='utf-8') as file:
-        for pattern in file:
-            patterns.append(re.compile(pattern.strip()))
+    global patterns
+    with open('rules.py', 'r', encoding='utf-8') as file:
+        for line in file:
+            pattern = line.strip()
+            if pattern:  # 빈 라인 무시
+                patterns.append(re.compile(pattern))
+    
+    if not patterns:
+        print("No patterns loaded from rules.py.")
+    else:
+        print(f"Loaded {len(patterns)} patterns from rules.py.")
 
 def handle_client(client_socket, client_address):
     try:
@@ -35,8 +43,10 @@ def handle_client(client_socket, client_address):
 
         matched_packets, unmatched_packets = process_packets([data])
 
-        send_to_django(matched_packets, '/api/matched_packets')
-        send_to_django(unmatched_packets, '/api/unmatched_packets')
+        if matched_packets:
+            send_to_django(matched_packets, '/api/matched_packets')
+        if unmatched_packets:
+            send_to_django(unmatched_packets, '/api/unmatched_packets')
 
         client_socket.send("Data processed and sent to Django server.".encode())
         
@@ -50,6 +60,10 @@ def process_packets(packets):
     matched_packets = []
     unmatched_packets = []
 
+    if not patterns:
+        print("No patterns available for matching.")
+        return matched_packets, unmatched_packets
+
     for packet in packets:
         if not isinstance(packet, dict) or 'packet_data' not in packet:
             print("Invalid packet format:", packet)
@@ -62,6 +76,7 @@ def process_packets(packets):
             if pattern.search(packet['packet_data']):
                 matched = True
                 matched_pattern = pattern.pattern
+                break
         
         if matched:
             matched_packets.append(packet)
