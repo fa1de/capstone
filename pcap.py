@@ -6,6 +6,8 @@ import socket
 import json
 import subprocess
 import time
+from pro_counts import send_packet_counts_to_server
+from ip_counts import send_packet_ipcounts_to_server
 
 def get_interfaces():
     return psutil.net_if_addrs().keys()
@@ -13,8 +15,10 @@ def get_interfaces():
 def packet_sniffer(packet):
     protocol_info = extract_protocol_info(packet)
     if protocol_info:
-        send_packet_to_server(protocol_info)     
-        
+        send_packet_to_server(protocol_info)
+    update_packet_counts(packet)
+    update_ip_packet_counts(packet)
+
 def extract_protocol_info(packet):
     protocol_info = {}
 
@@ -91,7 +95,7 @@ def extract_dns_info(packet):
         dns_info['dns_query'] = packet['DNS'].qd.qname.decode('utf-8')
     if packet['DNS'].an:
         # rdata가 이미 문자열인 경우 decode 제거
-        dns_info['dns_response'] = packet['DNS'].an.rdata if isinstance(packet['DNS'].an.rdata, str) else packet['DNS'].an.rdata.decode('utf-8')
+        dns_info['dns_response'] = str(packet['DNS'].an.rdata)
     return dns_info
 
 def extract_http_info(packet):
@@ -117,6 +121,49 @@ def extract_ssh_info(packet):
         'algorithm': ssh_layer.encryption_algorithms_client_to_server.decode('utf-8'),
         'username': ssh_layer.user.decode('utf-8')
     }
+
+# 전역 변수로 각 프로토콜에 대한 카운트를 저장하는 딕셔너리 초기화
+protocol_counts = {
+    'TCP': 0,
+    'UDP': 0,
+    'ICMP': 0,
+    'DNS': 0,
+    'HTTP': 0,
+    'FTP': 0,
+    'SSH': 0
+}
+
+def update_packet_counts(packet):
+    if packet.haslayer('TCP'):
+        protocol_counts['TCP'] += 1
+    elif packet.haslayer('UDP'):
+        protocol_counts['UDP'] += 1
+    elif packet.haslayer('ICMP'):
+        protocol_counts['ICMP'] += 1
+    elif packet.haslayer('DNS'):
+        protocol_counts['DNS'] += 1
+    elif packet.haslayer('HTTP'):
+        protocol_counts['HTTP'] += 1
+    elif packet.haslayer('FTP'):
+        protocol_counts['FTP'] += 1
+    elif packet.haslayer('SSH'):
+        protocol_counts['SSH'] += 1
+
+    send_packet_counts_to_server(protocol_counts)
+    print(protocol_counts)
+
+ip_packet_counts = {}
+
+def update_ip_packet_counts(packet):
+    # IP 주소별 패킷 카운트 업데이트하는 로직 추가
+    if 'IP' in packet:
+        source_ip = packet['IP'].src
+        if source_ip in ip_packet_counts:
+            ip_packet_counts[source_ip] += 1
+        else:
+            ip_packet_counts[source_ip] = 1
+    send_packet_ipcounts_to_server(ip_packet_counts)
+    print(ip_packet_counts)
 
 B_SERVER_ADDRESS = '127.0.0.1'
 B_SERVER_PORT = 8002

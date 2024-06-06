@@ -1,35 +1,40 @@
 import threading
-import re
 import requests
 import logging
 import socket
 import json
 import signal
-from collections import defaultdict
+import importlib.util
+import re
 
 B_SERVER_ADDRESS = '127.0.0.1'
 B_SERVER_PORT = 8002
 
-logging.basicConfig(filename='packet_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
-
-patterns = []
+logging.basicConfig(filename='_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 django_server_url = 'http://127.0.0.1:8000'
 
-protocol_packet_count = defaultdict(int)
+# 패턴을 저장할 리스트
+patterns = []
 
 def load_patterns():
     global patterns
-    with open('rules.py', 'r', encoding='utf-8') as file:
-        for line in file:
-            pattern = line.strip()
-            if pattern:  # 빈 라인 무시
-                patterns.append(re.compile(pattern))
-    
+    # rules.py 모듈을 동적으로 로드
+    spec = importlib.util.spec_from_file_location("rules", "rules.py")
+    rules = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rules)
+
+    # rules.py의 모든 패턴을 불러옴
+    for attr_name in dir(rules):
+        attr = getattr(rules, attr_name)
+        if isinstance(attr, re.Pattern):
+            patterns.append(attr)
+
     if not patterns:
         print("No patterns loaded from rules.py.")
     else:
         print(f"Loaded {len(patterns)} patterns from rules.py.")
+
 
 def handle_client(client_socket, client_address):
     try:
@@ -69,11 +74,14 @@ def process_packets(packets):
             print("Invalid packet format:", packet)
             continue
 
+        packet_data = packet['packet_data']
+        logging.info(f"Processing packet data: {packet_data}")
+
         matched = False
         matched_pattern = None 
         
         for pattern in patterns:
-            if pattern.search(packet['packet_data']):
+            if pattern.search(packet_data):
                 matched = True
                 matched_pattern = pattern.pattern
                 break
@@ -89,7 +97,7 @@ def process_packets(packets):
     return matched_packets, unmatched_packets
 
 def send_notification_to_django(message, endpoint):
-    try:
+    try:    
         response = requests.post(f'{django_server_url}{endpoint}', json={'message': message})
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
