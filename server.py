@@ -10,7 +10,7 @@ import re
 B_SERVER_ADDRESS = '127.0.0.1'
 B_SERVER_PORT = 8002
 
-logging.basicConfig(filename='_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
+logging.basicConfig(filename='packet_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 django_server_url = 'http://127.0.0.1:8000'
 
