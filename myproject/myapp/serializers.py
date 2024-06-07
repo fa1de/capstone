@@ -7,5 +7,4 @@ from rest_framework.views import APIView
 class PacketSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProtocolInfo
-        fields = ['protocol_name', 'count']
-    
+        fields = ["protocol_name", "count"]
