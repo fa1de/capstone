@@ -64,14 +64,28 @@ class ProtocolInfoViewSet(viewsets.ModelViewSet):
         if response.status_code == status.HTTP_201_CREATED:
             print(response.data)
             protocol_id = response.data["protocol_id"]
+            source_ip = response.data["source_ip"]
+            target_ip = response.data["target_ip"]
+            ip_key = f"{source_ip}_{target_ip}"
             protocol_name = Protocol.objects.get(id=protocol_id).name
+
             aggregate, created = Aggregate.objects.get_or_create(
-                key=f"{protocol_name}", defaults={"value": 0}
+                key=f"protocol-{protocol_name}", defaults={"value": 1}
             )
-            # orm으로 값을 증가시키면 동시성 문제가 발생할 수 있기 때문에
-            # F()를 사용하여 데이터베이스에서 직접 값을 증가시킵니다.
-            aggregate.value = F("value") + 1
-            aggregate.save()
+
+            if not created:
+                # 동시성 문제 방지
+                aggregate.value = F("value") + 1
+                aggregate.save()
+
+            aggregate, created = Aggregate.objects.get_or_create(
+                key=f"ip-{ip_key}", defaults={"value": 1}
+            )
+
+            if not created:
+                # 동시성 문제 방지
+                aggregate.value = F("value") + 1
+                aggregate.save()
 
         return response
 

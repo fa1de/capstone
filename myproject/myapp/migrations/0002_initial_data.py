@@ -20,10 +20,6 @@ def create_initial_data(apps, schema_editor):
         Protocol.objects.create(
             name=protocol,
         )
-        Aggregate.objects.create(
-            key=protocol,
-            value=0,
-        )
 
 
 class Migration(migrations.Migration):

@@ -44,96 +44,127 @@
     
 
     <script>
-        Chart.register(ChartDataLabels);
+        async function getChart() {
+            const protocol_response = await fetch('/protocol')
+            const aggregate_response = await fetch('/aggregate')
+            
+            const protocol_data = await protocol_response.json()
+            const aggregate_data = await aggregate_response.json()
 
-        const protocolLabels = ['TCP', 'UDP', 'ICMP', 'HTTP', 'FTP', 'DNS', 'SSH'];
-        const initCounts = new Array(protocolLabels.length).fill(0);
+            console.log("======== fetched chart data ========")
+            console.log(protocol_data)
+            console.log(aggregate_data)
 
-        const lineChartConfig = {
-            type: 'line',
-            data: {
-                labels: protocolLabels,
-                datasets: [{
-                    label: 'Protocol Count',
-                    data: initCounts,
-                    fill: false,
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                plugins: {
-                    datalabels: {
-                        color: 'red',
-                        align: 'end',
-                        anchor: 'end',
-                        font: { weight: 'bold' }
-                    }
+            const protocols = []
+            const ips = []
+
+            aggregate_data.forEach(agg => {
+                const { key, value } = agg;
+
+                console.log(key)
+                if (key.includes('protocol')) {
+                    protocols.push({ name: key.split("-")[1], count: value } );
+                }
+                if (key.includes('ip')) {
+                    ips.push({ name: key.split("-")[1], count: value } );
+                }
+            });
+
+            console.log("======== transformed chart data ========")
+            console.log(protocols)
+            console.log(ips)
+
+            return { protocols, ips }
+        }
+
+        function initChart(labels){
+            const lineChartConfig = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Protocol Count',
+                        data: [],
+                        fill: false,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
                 },
-                scales: { y: { beginAtZero: true } }
-            }
-        };
+                options: {
+                    plugins: {
+                        datalabels: {
+                            color: 'red',
+                            align: 'end',
+                            anchor: 'end',
+                            font: { weight: 'bold' }
+                        }
+                    },
+                    scales: { y: { beginAtZero: true } }
+                }
+            };
 
-        const barChartConfig = {
-            type: 'bar',
-            data: {
-                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-                datasets: [{
-                    label: 'Sample Data',
-                    data: [12, 19, 3, 5, 2, 3],
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.2)',
-                        'rgba(54, 162, 235, 0.2)',
-                        'rgba(255, 206, 86, 0.2)',
-                        'rgba(75, 192, 192, 0.2)',
-                        'rgba(153, 102, 255, 0.2)',
-                        'rgba(255, 159, 64, 0.2)'
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                plugins: {
-                    datalabels: {
-                        color: 'red',
-                        align: 'end',
-                        anchor: 'end',
-                        font: { weight: 'bold' }
+            const barChartConfig = {
+                type: 'bar',
+                data: {
+                    labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                    datasets: [{
+                        label: 'Sample Data',
+                        data: [],
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    plugins: {
+                        datalabels: {
+                            color: 'red',
+                            align: 'end',
+                            anchor: 'end',
+                            font: { weight: 'bold' }
+                        }
                     }
                 }
-            }
-        };
+            };
 
-        var json = undefined;
-
-        const myLineChart = new Chart(document.getElementById('myLineChart').getContext('2d'), lineChartConfig);
-        const myBarChart = new Chart(document.getElementById('myBarChart').getContext('2d'), barChartConfig);
-
-        async function updateChart() {
-            const response = await fetch('/protocol')
-            const data = response.json()
-            console.log(data)
-            const counts = protocolLabels.map(label => data.reduce((acc, item) => {
-                return item.protocol_name === label ? acc + item.count : acc;
-            }, 0));
-            myLineChart.data.datasets[0].data = counts;
-            myLineChart.update();
+            return [new Chart(document.getElementById('myLineChart').getContext('2d'), lineChartConfig), new Chart(document.getElementById('myBarChart').getContext('2d'), barChartConfig)]
         }
 
-        try{
-            updateChart();
-        } catch(e) {
-            console.error('Error fetching data:', error)
+
+        function updateChart(charts, counts){
+            lineChart.data.datasets[0].data = counts;
+            lineChart.update();
+            barChart.data.datasets[0].data = counts;
+            barChart.update();
         }
-        setInterval(updateChart, 3000);
+
+        Chart.register(ChartDataLabels);
+
+        getChart().then((data) => {
+            const charts = initChart(labels);
+
+            updateChart(data);
+
+            setInterval(() => {
+                getChart().then(updatedData => {
+                    updateChart(updatedData);
+                });
+            }, 3000);
+        }).catch(e => console.error(`Failed to get chart data. [${e}]`));
     </script>
 </body>
 </html>

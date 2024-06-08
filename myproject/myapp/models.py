@@ -21,7 +21,7 @@ class ProtocolInfo(models.Model):
         Protocol, on_delete=models.CASCADE, related_name="protocols"
     )
     source_ip = models.CharField(max_length=20, default=False)
-    destination_ip = models.CharField(max_length=20, default=False)
+    target_ip = models.CharField(max_length=20, default=False)
 
     def __str__(self):
         return self.source_ip
