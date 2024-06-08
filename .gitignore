@@ -2,3 +2,9 @@
 !server.py
 __pycache__/
 migrations/
+.mypy_cache/
+data/
+
+# editor
+.idea/
+.vscode/
