@@ -8,3 +8,6 @@ data/
 # editor
 .idea/
 .vscode/
+
+# log
+packet_log.txt
