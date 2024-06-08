@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
-from myapp.views import GraphView, UpdateChartView, UpdateChartView, PacketView
+from myapp.views import GraphView, UpdateChartView, UpdateChartView
 
 urlpatterns = [
     path("admin/", admin.site.urls),

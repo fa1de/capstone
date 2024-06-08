@@ -1,13 +1,11 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 import json
-import requests
-from rest_framework import viewsets, serializers
-from myapp.serializers import PacketSerializer
+from rest_framework import viewsets
+from myapp.serializers import ProtocolInfoSerializer
 from myapp.models import ProtocolInfo
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
+from .serializers import ProtocolInfoSerializer
 
 
 # View 정의
@@ -51,6 +49,6 @@ class UpdateChartView(APIView):
             return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
 
 
-class PacketView(viewsets.ModelViewSet):
+class ProtocolInfoViewSet(viewsets.ModelViewSet):
     queryset = ProtocolInfo.objects.all()
-    serializer_class = PacketSerializer
+    serializer_class = ProtocolInfoSerializer
