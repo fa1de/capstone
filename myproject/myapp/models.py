@@ -1,11 +1,27 @@
 from django.db import models
 
-class ProtocolInfo(models.Model):
-    protocol_name = models.CharField(max_length=5, default=False)
-    src_IP = models.CharField(max_length=20, default=False)
-    dest_IP = models.CharField(max_length=20, default=False)
-    count = models.IntegerField(default=0)
-    
+
+class Aggregate(models.Model):
+    key = models.CharField()
+    value = models.IntegerField()
+
+    def __str__(self) -> str:
+        return str(self.key)
+
+
+class Protocol(models.Model):
+    name = models.CharField(max_length=5, default=False)
+
     def __str__(self):
-        return self.protocol_name
-    
+        return self.name
+
+
+class ProtocolInfo(models.Model):
+    protocol = models.ForeignKey(
+        Protocol, on_delete=models.CASCADE, related_name="protocols"
+    )
+    source_ip = models.CharField(max_length=20, default=False)
+    destination_ip = models.CharField(max_length=20, default=False)
+
+    def __str__(self):
+        return self.source_ip

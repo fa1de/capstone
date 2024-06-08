@@ -2,18 +2,15 @@ from django.shortcuts import render
 from django.http import JsonResponse
 import json
 from rest_framework import viewsets
-from myapp.serializers import ProtocolInfoSerializer
-from myapp.models import ProtocolInfo
+from .models import ProtocolInfo, Protocol
 from rest_framework.views import APIView
-from .serializers import ProtocolInfoSerializer
-from rest_framework.decorators import action
+from .serializers import ProtocolInfoSerializer, ProtocolSerializer
 
 
 # View 정의
 class GraphView(APIView):
     def get(self, request):
-        protocols = ["TCP", "UDP", "ICMP", "HTTP", "FTP", "DNS", "SSH"]
-        return render(request, "graph.html", {"protocols": protocols})
+        return render(request, "graph.html")
 
 
 class UpdateChartView(APIView):
@@ -50,12 +47,11 @@ class UpdateChartView(APIView):
             return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
 
 
+class ProtocolViewSet(viewsets.ModelViewSet):
+    queryset = Protocol.objects.all()
+    serializer_class = ProtocolSerializer
+
+
 class ProtocolInfoViewSet(viewsets.ModelViewSet):
     queryset = ProtocolInfo.objects.all()
     serializer_class = ProtocolInfoSerializer
-
-    # 커스텀 엔드포인트 예제: 가장 최근에 출판된 책을 가져오는 엔드포인트
-    @action(detail=False, methods=["get"])
-    def graph(self, request):
-        protocols = ["TCP", "UDP", "ICMP", "HTTP", "FTP", "DNS", "SSH"]
-        return render(request, "graph.html", {"protocols": protocols})

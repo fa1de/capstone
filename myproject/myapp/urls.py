@@ -1,8 +1,9 @@
 from django.urls import path, include
-from .views import GraphView, ProtocolInfoViewSet, UpdateChartView
+from .views import *
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
+router.register(r"protocol", ProtocolViewSet)
 router.register(r"protocol-info", ProtocolInfoViewSet)
 
 urlpatterns = [
