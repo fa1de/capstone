@@ -26,7 +26,7 @@ def load_patterns(patterns: list):
         print(f"Loaded {len(patterns)} patterns from rules.py.")
 
 
-def handle_client(client_socket, client_address):
+def handle_client(client_socket, client_address, patterns: list):
     try:
         request = client_socket.recv(4096)
         if not request:
@@ -36,7 +36,9 @@ def handle_client(client_socket, client_address):
         if "packet_data" not in data:
             raise ValueError("Invalid packets data format")
 
-        matched_packets, unmatched_packets = process_packets([data])
+        print(patterns)
+
+        matched_packets, unmatched_packets = process_packets([data], patterns)
 
         if matched_packets:
             send_to_django(matched_packets, "/api/matched_packets")
@@ -115,7 +117,7 @@ def start_server(patterns):
         while True:
             client_socket, client_address = server_socket.accept()
             client_handler = threading.Thread(
-                target=handle_client, args=(client_socket, client_address)
+                target=handle_client, args=(client_socket, client_address, patterns)
             )
             client_handler.start()
     except KeyboardInterrupt:

@@ -142,25 +142,17 @@ protocol_counts = {
     "SSH": 0,
 }
 
+protocols = ["TCP", "UDP", "ICMP", "DNS", "HTTP", "FTP", "SSH"]
+
 
 def update_packet_counts(packet):
-    if packet.haslayer("TCP"):
-        protocol_counts["TCP"] += 1
-    elif packet.haslayer("UDP"):
-        protocol_counts["UDP"] += 1
-    elif packet.haslayer("ICMP"):
-        protocol_counts["ICMP"] += 1
-    elif packet.haslayer("DNS"):
-        protocol_counts["DNS"] += 1
-    elif packet.haslayer("HTTP"):
-        protocol_counts["HTTP"] += 1
-    elif packet.haslayer("FTP"):
-        protocol_counts["FTP"] += 1
-    elif packet.haslayer("SSH"):
-        protocol_counts["SSH"] += 1
+    protocol_str = "none"
+    for protocol in protocols:
+        if packet.haslayer(protocol):
+            protocol_counts[protocol] += 1
+            protocol_str = protocol
 
-    send_packet_counts_to_server(protocol_counts)
-    print(protocol_counts)
+    send_packet_counts_to_server(protocol_counts[protocol], protocol_str)
 
 
 ip_packet_counts = {}
