@@ -1,9 +1,12 @@
 import requests
-from server import django_server_url
+from config import B_SERVER_URL
+
 
 def send_packet_ipcounts_to_server(ipcounts):
     try:
-        response = requests.post(f'{django_server_url}/ippacket', json={'ip_counts': ipcounts})
+        response = requests.post(
+            f"{B_SERVER_URL}/ippacket", json={"ip_counts": ipcounts}
+        )
         response.raise_for_status()
         print("IP packet counts sent to Django server successfully.")
     except requests.exceptions.RequestException as e:

@@ -1,5 +1,5 @@
 import requests
-from server import django_server_url
+from config import B_SERVER_URL
 import json
 
 
@@ -7,7 +7,7 @@ def send_packet_counts_to_server(protocol_counts):
     protocol_counts_str = json.dumps(protocol_counts)
     try:
         response = requests.post(
-            f"{django_server_url}/packet/",
+            f"{B_SERVER_URL}/packet/",
             json={"protocol_counts": protocol_counts_str},
         )
         response.raise_for_status()

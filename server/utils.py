@@ -5,7 +5,7 @@ import socket
 import json
 import importlib.util
 import re
-from env import *
+from config import *
 
 
 def load_patterns(patterns: list):

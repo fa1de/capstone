@@ -4,3 +4,6 @@
 2024-06-08 16:25:40,066 - No IPv4 address found on anpi0 !
 2024-06-08 16:25:40,070 - No IPv4 address found on anpi1 !
 2024-06-08 16:25:40,073 - more No IPv4 address found on en3 !
+2024-06-08 18:11:35,925 - No IPv4 address found on anpi0 !
+2024-06-08 18:11:35,930 - No IPv4 address found on anpi1 !
+2024-06-08 18:11:35,933 - more No IPv4 address found on en3 !

@@ -8,6 +8,7 @@ import subprocess
 import time
 from counts import send_packet_counts_to_server
 from ip_counts import send_packet_ipcounts_to_server
+from config import B_ROUTER_FILE
 
 
 def get_interfaces():
@@ -200,7 +201,7 @@ def start_sniffer(interface, stop_event):
 
 
 if __name__ == "__main__":
-    server_process = subprocess.Popen(["python", "server.py"])
+    server_process = subprocess.Popen(["python", B_ROUTER_FILE])
     time.sleep(5)
 
     stop_event = Event()
