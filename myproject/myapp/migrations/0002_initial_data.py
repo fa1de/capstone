@@ -2,7 +2,7 @@
 
 import django.db.models.deletion
 from django.db import migrations, models
-from myapp.models import Protocol
+from myapp.models import Protocol, Aggregate
 
 
 def create_initial_data(apps, schema_editor):
@@ -19,6 +19,10 @@ def create_initial_data(apps, schema_editor):
     for protocol in protocols:
         Protocol.objects.create(
             name=protocol,
+        )
+        Aggregate.objects.create(
+            key=protocol,
+            value=0,
         )
 
 

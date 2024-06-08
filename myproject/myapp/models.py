@@ -17,7 +17,7 @@ class Protocol(models.Model):
 
 
 class ProtocolInfo(models.Model):
-    protocol = models.ForeignKey(
+    protocol_id = models.ForeignKey(
         Protocol, on_delete=models.CASCADE, related_name="protocols"
     )
     source_ip = models.CharField(max_length=20, default=False)

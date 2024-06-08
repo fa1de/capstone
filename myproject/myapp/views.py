@@ -2,9 +2,11 @@ from django.shortcuts import render
 from django.http import JsonResponse
 import json
 from rest_framework import viewsets
-from .models import ProtocolInfo, Protocol
+from .models import ProtocolInfo, Protocol, Aggregate
 from rest_framework.views import APIView
-from .serializers import ProtocolInfoSerializer, ProtocolSerializer
+from .serializers import ProtocolInfoSerializer, ProtocolSerializer, AggregateSerializer
+from rest_framework import status
+from django.db.models import F
 
 
 # View 정의
@@ -55,3 +57,25 @@ class ProtocolViewSet(viewsets.ModelViewSet):
 class ProtocolInfoViewSet(viewsets.ModelViewSet):
     queryset = ProtocolInfo.objects.all()
     serializer_class = ProtocolInfoSerializer
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+
+        if response.status_code == status.HTTP_201_CREATED:
+            print(response.data)
+            protocol_id = response.data["protocol_id"]
+            protocol_name = Protocol.objects.get(id=protocol_id).name
+            aggregate, created = Aggregate.objects.get_or_create(
+                key=f"{protocol_name}", defaults={"value": 0}
+            )
+            # orm으로 값을 증가시키면 동시성 문제가 발생할 수 있기 때문에
+            # F()를 사용하여 데이터베이스에서 직접 값을 증가시킵니다.
+            aggregate.value = F("value") + 1
+            aggregate.save()
+
+        return response
+
+
+class AggregateViewSet(viewsets.ModelViewSet):
+    queryset = Aggregate.objects.all()
+    serializer_class = AggregateSerializer
