@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- chartjs-plugin-datalabels 플러그인 추가 -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <link rel="stylesheet" href="/static/ex.css" type="text/css">
 </head>
-<body>      
-    <div id= "top", style="border: 2px solid;"></div>
-    
-    <button type="button" id="button" > <img src="./start.png" width="45px" height="50px" /></button>
-    
+<body>
+    <div id="top" style="border: 2px solid;"></div>
+
+    <button type="button" id="button">
+        <img src="./start.png" width="45px" height="50px"/>
+    </button>
+
     <select id="option">
         <option value="none">인터페이스 선택</option>
         <option>1</option>
@@ -22,27 +23,37 @@
         <option>4</option>
     </select>
 
-    <input type="button" value="실행" id="start" ></button>
+    <input type="button" value="실행" id="start"/>
 
     <div id="chart-container">
         <canvas id="myLineChart"></canvas>
         <canvas id="myBarChart"></canvas>
     </div>
 
-    <div id= "line" style="border: 2px solid;"></div>
+    <div id="line" style="border: 2px solid;"></div>
+    <div id="bar" style="border: 2px solid;"></div>
+
+    <div id="list1" style="border: 2px solid;"></div>
+    <hr id="line1" style="border: solid 1px;"/>
+    <b id="list1_text">정규표현식 매칭 패킷</b>
+
+    <div id="list2" style="border: 2px solid;"></div>
+    <hr id="line2" style="border: solid 1px;"/>
+    <b id="list2_text">블랙리스트 IP</b>
 
     <script>
-        // chartjs-plugin-datalabels 플러그인을 등록합니다.
         Chart.register(ChartDataLabels);
-        
-        var ctxLine = document.getElementById('myLineChart').getContext('2d');
-        var myLineChart = new Chart(ctxLine, {
+
+        const protocolLabels = ['TCP', 'UDP', 'ICMP', 'HTTP', 'FTP', 'DNS', 'SSH'];
+        const initCounts = new Array(protocolLabels.length).fill(0);
+
+        const lineChartConfig = {
             type: 'line',
             data: {
-                labels: ['TCP', 'UDP', 'ICMP', 'HTTP', 'FTP', 'DNS', 'SSH'],
+                labels: protocolLabels,
                 datasets: [{
                     label: 'Protocol Count',
-                    data: [0, 0, 0, 0, 0, 0, 0], // 초기 카운트를 0으로 설정합니다.
+                    data: initCounts,
                     fill: false,
                     borderColor: 'rgb(75, 192, 192)',
                     tension: 0.1
@@ -52,77 +63,16 @@
                 plugins: {
                     datalabels: {
                         color: 'red',
-                        formatter: function(value, context) {
-                            return value;
-                        },
                         align: 'end',
                         anchor: 'end',
-                        font: {
-                            weight: 'bold'
-                        }
+                        font: { weight: 'bold' }
                     }
                 },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
+                scales: { y: { beginAtZero: true } }
             }
-        });
-    
-        function updateChart() {
-            fetch('/packet')
-                .then(response => response.json())
-                .then(data => {
-                    const protocolCounts = data;
-                    console.log('Protocol counts:', protocolCounts);
-        
-                    // 카운트 값 배열 초기화
-                    const counts = [0, 0, 0, 0, 0, 0, 0];
-        
-                    // 데이터 배열 순회하며 카운트 값 추출
-                    for (const key in protocolCounts) {
-                        if (Object.hasOwnProperty.call(protocolCounts, key)) {
-                            const item = protocolCounts[key];
-                            if (item.protocol_name === 'TCP') {
-                                counts[0] += item.count;
-                            } else if (item.protocol_name === 'UDP') {
-                                counts[1] += item.count;
-                            } else if (item.protocol_name === 'ICMP') {
-                                counts[2] += item.count;
-                            } else if (item.protocol_name === 'HTTP') {
-                                counts[3] += item.count;
-                            } else if (item.protocol_name === 'FTP') {
-                                counts[4] += item.count;
-                            } else if (item.protocol_name === 'DNS') {
-                                counts[5] += item.count;
-                            } else if (item.protocol_name === 'SSH') {
-                                counts[6] += item.count;
-                            }
-                        }
-                    }
-        
-                    // 그래프 업데이트
-                    myLineChart.data.datasets[0].data = counts;
-                    myLineChart.update();
-                })
-                .catch(error => console.error('Error fetching data:', error));
-        }
-    
-        // 초기 그래프 업데이트 호출
-        updateChart();
-    
-        // 주기적으로 그래프 업데이트
-        setInterval(updateChart, 3000);
-    </script>
-    
-    
+        };
 
-    <div id= "bar" style="border: 2px solid;"></div>
-
-    <script>
-        var ctxBar = document.getElementById('myBarChart').getContext('2d');
-        var myBarChart = new Chart(ctxBar, {
+        const barChartConfig = {
             type: 'bar',
             data: {
                 labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
@@ -154,28 +104,30 @@
                         color: 'red',
                         align: 'end',
                         anchor: 'end',
-                        font: {
-                            weight: 'bold'
-                        }
+                        font: { weight: 'bold' }
                     }
                 }
             }
-        });
+        };
+
+        const myLineChart = new Chart(document.getElementById('myLineChart').getContext('2d'), lineChartConfig);
+        const myBarChart = new Chart(document.getElementById('myBarChart').getContext('2d'), barChartConfig);
+
+        function updateChart() {
+            fetch('/protocol-info')
+                .then(response => response.json())
+                .then(data => {
+                    const counts = protocolLabels.map(label => data.reduce((acc, item) => {
+                        return item.protocol_name === label ? acc + item.count : acc;
+                    }, 0));
+                    myLineChart.data.datasets[0].data = counts;
+                    myLineChart.update();
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        updateChart();
+        setInterval(updateChart, 3000);
     </script>
-
-    <div id= "list1" style="border: 2px solid;"></div>
-    <hr id="line1" style="border: solid 1px; "/>
-    <b id="list1_text">
-        정규표현식 매칭 패킷
-    </b>
-
-    <div id= "list2" style="border: 2px solid;"></div>
-    <hr id="line2" style="border: solid 1px; "/>
-    <b id="list2_text">
-        블랙리스트 IP
-    </b>
-
 </body>
-
-
-    </html>
+</html>

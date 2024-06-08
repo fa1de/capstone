@@ -6,6 +6,7 @@ from myapp.serializers import ProtocolInfoSerializer
 from myapp.models import ProtocolInfo
 from rest_framework.views import APIView
 from .serializers import ProtocolInfoSerializer
+from rest_framework.decorators import action
 
 
 # View 정의
@@ -52,3 +53,9 @@ class UpdateChartView(APIView):
 class ProtocolInfoViewSet(viewsets.ModelViewSet):
     queryset = ProtocolInfo.objects.all()
     serializer_class = ProtocolInfoSerializer
+
+    # 커스텀 엔드포인트 예제: 가장 최근에 출판된 책을 가져오는 엔드포인트
+    @action(detail=False, methods=["get"])
+    def graph(self, request):
+        protocols = ["TCP", "UDP", "ICMP", "HTTP", "FTP", "DNS", "SSH"]
+        return render(request, "graph.html", {"protocols": protocols})
