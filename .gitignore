@@ -1,7 +1,6 @@
 !pcap.p
 !server.py
 __pycache__/
-migrations/
 .mypy_cache/
 data/
 
