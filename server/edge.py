@@ -6,7 +6,7 @@ import socket
 import json
 import subprocess
 import time
-from pro_counts import send_packet_counts_to_server
+from counts import send_packet_counts_to_server
 from ip_counts import send_packet_ipcounts_to_server
 
 def get_interfaces():
