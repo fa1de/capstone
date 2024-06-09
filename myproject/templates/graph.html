@@ -6,42 +6,90 @@
     <title>Document</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <link rel="stylesheet" href="/static/ex.css" type="text/css">
+    <link rel="stylesheet" href="/static/graph.css" type="text/css">
 </head>
 <body>
-    <div id="top" style="border: 2px solid;"></div>
+    <div class="header">
+        <div class=header-left-container>
+            <button class="edge-run-btn" type="button">
+                <img src="../static/images/play.png"
+                width="24" height="24" />            </button>
 
-    <button type="button" id="button">
-        <img src="./start.png" width="45px" height="50px"/>
-    </button>
+            <select class="select">
+                <option value="none">인터페이스 선택</option>
+                <option>1</option>
+                <option>2</option>
+                <option>3</option> 
+                <option>4</option>
+            </select>
 
-    <select id="option">
-        <option value="none">인터페이스 선택</option>
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-        <option>4</option>
-    </select>
+            <input class="capture-run-btn" type="button" value="실행"/>
 
-    <input type="button" value="실행" id="start"/>
-
-    <div id="chart-container">
-        <canvas id="myLineChart"></canvas>
-        <canvas id="myBarChart"></canvas>
+            <button class="edge-run-btn" type="button" onclick="javascript:print()">
+                <img src="../static/images/print.png"
+                width="24" height="24" />
+            </button>
+        </div>
     </div>
 
-    <div id="line" style="border: 2px solid;"></div>
-    <div id="bar" style="border: 2px solid;"></div>
 
-    <div id="list1" style="border: 2px solid;"></div>
-    <hr id="line1" style="border: solid 1px;"/>
-    <b id="list1_text">정규표현식 매칭 패킷</b>
 
-    <div id="list2" style="border: 2px solid;"></div>
-    <hr id="line2" style="border: solid 1px;"/>
-    <b id="list2_text">블랙리스트 IP</b>
+    <div class="dashboard-container">
+        <div class="chart-container">
+            <div class="chart-box">
+                <div class="title">Protocol Count</div>
+                <canvas id="barChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <div class="title">IP Count</div>
+                <div class="ip-box">
+                    <canvas id="lineChart"></canvas>
+                    <div class="anomaly-detection-box">
+                        <div>이상 감지</div>
+                        <div class="divider"></div>
+                        <div class="content">0.0.0.0_0.0.0.0 DDos 공격이 의심됩니다.</div>
+                    </div>
+                </div>
 
-    
+
+            </div>    
+        </div>
+        <div class="table-container">
+            <div class="table-box">
+                <div class="title">Regex Matching Packet</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>IP</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>192.168.1.1</td>
+                            <td>10</td>
+                        </tr>
+                        <!-- Add more rows as needed -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-box">
+                <div class="title">Blacklist IP</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>IP</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>192.168.1.1</td>
+                            </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script>
         async function getChart() {
@@ -74,17 +122,24 @@
             console.log(protocols)
             console.log(ips)
 
-            return { protocols, ips }
+            return { protocols, ips }
         }
 
-        function initChart(labels){
+        function initChart(data){
+            console.log("======== init chart ========")
+            console.log(data)
+            const { protocols, ips } = data;
+
+            console.log(protocols)
+            console.log(ips)
+
             const lineChartConfig = {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: protocols.map(p => p.name),
                     datasets: [{
                         label: 'Protocol Count',
-                        data: [],
+                        data: protocols.map(p => p.count),
                         fill: false,
                         borderColor: 'rgb(75, 192, 192)',
                         tension: 0.1
@@ -106,10 +161,10 @@
             const barChartConfig = {
                 type: 'bar',
                 data: {
-                    labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+                    labels: ips.map(p => p.name),
                     datasets: [{
-                        label: 'Sample Data',
-                        data: [],
+                        label: 'Source_Target IP Count',
+                        data: ips.map(p => p.count),
                         backgroundColor: [
                             'rgba(255, 99, 132, 0.2)',
                             'rgba(54, 162, 235, 0.2)',
@@ -141,23 +196,33 @@
                 }
             };
 
-            return [new Chart(document.getElementById('myLineChart').getContext('2d'), lineChartConfig), new Chart(document.getElementById('myBarChart').getContext('2d'), barChartConfig)]
+            return {
+                barChart: new Chart(document.getElementById('barChart').getContext('2d'), lineChartConfig),
+                donutChart: new Chart(document.getElementById('lineChart').getContext('2d'), barChartConfig)
+            }
         }
 
 
-        function updateChart(charts, counts){
-            lineChart.data.datasets[0].data = counts;
+        function updateChart(charts, data){
+            console.log("======== update chart ========")
+            console.log(charts)
+            console.log(data)
+
+            const { protocols, ips } = data;
+            const {lineChart, barChart}= charts;
+
+            lineChart.data.datasets[0].data = protocols.map(p => p.count);
             lineChart.update();
-            barChart.data.datasets[0].data = counts;
+            barChart.data.datasets[0].data = ips.map(p => p.count);
             barChart.update();
         }
 
         Chart.register(ChartDataLabels);
 
         getChart().then((data) => {
-            const charts = initChart(labels);
+            const charts = initChart(data);
 
-            updateChart(data);
+            updateChart(charts, data);
 
             setInterval(() => {
                 getChart().then(updatedData => {
