@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,30 +8,36 @@
     <title>Document</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <link rel="stylesheet" href="/static/graph.css" type="text/css">
+    <link rel="stylesheet" href="{% static '/css/graph.css' %}" type="text/css">
+    <script src="{% static '/javascripts/chart_utils.js' %}"></script>
+    <script src="{% static '/javascripts/api.js' %}"></script>
+    <script src="{% static '/javascripts/services/edge_service.js' %}"></script>
 </head>
 <body>
     <div class="header">
         <div class=header-left-container>
-            <button class="edge-run-btn" type="button">
-                <img src="../static/images/play.png"
-                width="24" height="24" />            </button>
-
-            <select class="select">
+            <div>
+                팀 프로젝트 로고 자리
+            </div>
+            <select id="interface-select" class="select">
                 <option value="none">인터페이스 선택</option>
-                <option>1</option>
-                <option>2</option>
-                <option>3</option> 
-                <option>4</option>
+                
             </select>
 
-            <input class="capture-run-btn" type="button" value="실행"/>
+            <button class="btn" type="button">
+                <img src="../static/images/play.png"
+                width="24" height="24" onclick="javascript:start_edge()"/>
+            </button>
 
-            <button class="edge-run-btn" type="button" onclick="javascript:print()">
-                <img src="../static/images/print.png"
+            <button class="btn" type="button">
+                <img src="../static/images/play.png"
                 width="24" height="24" />
             </button>
         </div>
+        <button class="btn print-btn" type="button"      onclick="javascript:print()">
+                <img src="../static/images/print.png"
+                width="24" height="24" />
+        </button>
     </div>
 
 
@@ -44,11 +52,11 @@
                 <div class="title">IP Count</div>
                 <div class="ip-box">
                     <canvas id="lineChart"></canvas>
-                    <div class="anomaly-detection-box">
+                    {% comment %} <div class="anomaly-detection-box">
                         <div>이상 감지</div>
                         <div class="divider"></div>
                         <div class="content">0.0.0.0_0.0.0.0 DDos 공격이 의심됩니다.</div>
-                    </div>
+                    </div> {% endcomment %}
                 </div>
 
 
@@ -92,132 +100,29 @@
     </div>
 
     <script>
-        async function getChart() {
-            const protocol_response = await fetch('/protocol')
-            const aggregate_response = await fetch('/aggregate')
-            
-            const protocol_data = await protocol_response.json()
-            const aggregate_data = await aggregate_response.json()
+        Chart.register(ChartDataLabels);
 
-            console.log("======== fetched chart data ========")
-            console.log(protocol_data)
-            console.log(aggregate_data)
+        let interfaces = []
+        let selected_interface_idx = 0
 
-            const protocols = []
-            const ips = []
-
-            aggregate_data.forEach(agg => {
-                const { key, value } = agg;
-
-                console.log(key)
-                if (key.includes('protocol')) {
-                    protocols.push({ name: key.split("-")[1], count: value } );
-                }
-                if (key.includes('ip')) {
-                    ips.push({ name: key.split("-")[1], count: value } );
-                }
+        get_interfaces().then((data) => {
+            print(data)
+            const select = document.getElementById('interface-select');
+            select.innerHTML = '';
+            select.addEventListener('change', function() {
+                var selected_interface_idx = this.value;
             });
 
-            console.log("======== transformed chart data ========")
-            console.log(protocols)
-            console.log(ips)
+            print("test")
 
-            return { protocols, ips }
-        }
-
-        function initChart(data){
-            console.log("======== init chart ========")
-            console.log(data)
-            const { protocols, ips } = data;
-
-            console.log(protocols)
-            console.log(ips)
-
-            const lineChartConfig = {
-                type: 'line',
-                data: {
-                    labels: protocols.map(p => p.name),
-                    datasets: [{
-                        label: 'Protocol Count',
-                        data: protocols.map(p => p.count),
-                        fill: false,
-                        borderColor: 'rgb(75, 192, 192)',
-                        tension: 0.1
-                    }]
-                },
-                options: {
-                    plugins: {
-                        datalabels: {
-                            color: 'red',
-                            align: 'end',
-                            anchor: 'end',
-                            font: { weight: 'bold' }
-                        }
-                    },
-                    scales: { y: { beginAtZero: true } }
-                }
-            };
-
-            const barChartConfig = {
-                type: 'bar',
-                data: {
-                    labels: ips.map(p => p.name),
-                    datasets: [{
-                        label: 'Source_Target IP Count',
-                        data: ips.map(p => p.count),
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.2)',
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(255, 206, 86, 0.2)',
-                            'rgba(75, 192, 192, 0.2)',
-                            'rgba(153, 102, 255, 0.2)',
-                            'rgba(255, 159, 64, 0.2)'
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)',
-                            'rgba(255, 159, 64, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    plugins: {
-                        datalabels: {
-                            color: 'red',
-                            align: 'end',
-                            anchor: 'end',
-                            font: { weight: 'bold' }
-                        }
-                    }
-                }
-            };
-
-            return {
-                barChart: new Chart(document.getElementById('barChart').getContext('2d'), lineChartConfig),
-                donutChart: new Chart(document.getElementById('lineChart').getContext('2d'), barChartConfig)
-            }
-        }
-
-
-        function updateChart(charts, data){
-            console.log("======== update chart ========")
-            console.log(charts)
-            console.log(data)
-
-            const { protocols, ips } = data;
-            const {lineChart, barChart}= charts;
-
-            lineChart.data.datasets[0].data = protocols.map(p => p.count);
-            lineChart.update();
-            barChart.data.datasets[0].data = ips.map(p => p.count);
-            barChart.update();
-        }
-
-        Chart.register(ChartDataLabels);
+            interfaces = [...data['interfaces']];
+            interfaces.forEach((i, interface) => {
+                const option = document.createElement('option')
+                option.value = i
+                option.text = interface
+                select.appendChild(option)
+            })
+        }).catch(e => console.error(`Failed to get interfaces. [${e}]`));
 
         getChart().then((data) => {
             const charts = initChart(data);

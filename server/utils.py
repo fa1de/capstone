@@ -5,7 +5,7 @@ import socket
 import json
 import importlib.util
 import re
-from config import *
+from config import BASE_IP, SERVER_PORT, SERVER_URL, B_SERVER_URL
 
 
 def load_patterns(patterns: list):
@@ -109,9 +109,9 @@ def send_to_django(packets, endpoint):
 def start_server(patterns):
     load_patterns(patterns)
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind((B_SERVER_ADDRESS, B_SERVER_PORT))
+    server_socket.bind((BASE_IP, SERVER_PORT))
     server_socket.listen(5)
-    print(f"Server listening on {B_SERVER_ADDRESS}:{B_SERVER_PORT}")
+    print(f"Server listening on {SERVER_URL}:{SERVER_PORT}")
 
     try:
         while True:

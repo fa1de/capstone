@@ -4,21 +4,23 @@
     height: 64px;
     margin: 12px 0;
     padding: 0 12px;
-        display: flex;
+    display: flex;
     align-items: center;
-    justify-content: start;
+    justify-content: space-between;
     border-radius: 10px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
 }
 
 .header-left-container{
+    position: absolute;
+    left: 32px;
     display: flex;
     align-items: center;
-    justify-content: center; 
+    justify-content: space-between; 
     gap: 16px;
 }
 
-.edge-run-btn {
+.btn{
     border-radius: 10px;
     border: none;
     width: 40px;
@@ -29,11 +31,16 @@
     cursor: pointer;
 }
 
-.edge-run-btn:hover{
+.print-btn {
+   position: absolute; 
+   right: 32px;
+}
+
+.btn:hover{
     opacity: 0.5;
 }
 
-.edge-run-btn:active{
+.btn:active{
     opacity: 0.8;
 }
 

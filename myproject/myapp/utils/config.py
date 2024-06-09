@@ -1,0 +1,7 @@
+BASE_IP = "127.0.0.1"
+ROUTER_PORT = 8002
+
+SERVER_PORT = 8000
+SERVER_URL = f"http://{BASE_IP}:{SERVER_PORT}"
+
+ROUTER_FILE = "router.py"

@@ -22,6 +22,7 @@ class ProtocolInfo(models.Model):
     )
     source_ip = models.CharField(max_length=20, default=False)
     target_ip = models.CharField(max_length=20, default=False)
+    pattern = models.CharField(default="")
 
     def __str__(self):
         return self.source_ip

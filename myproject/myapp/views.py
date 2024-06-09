@@ -1,52 +1,44 @@
 from django.shortcuts import render
-from django.http import JsonResponse
-import json
-from rest_framework import viewsets
-from .models import ProtocolInfo, Protocol, Aggregate
+from django.http import HttpResponse, JsonResponse
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.views import APIView
+from .models import ProtocolInfo, Protocol, Aggregate
 from .serializers import ProtocolInfoSerializer, ProtocolSerializer, AggregateSerializer
-from rest_framework import status
 from django.db.models import F
+from threading import Thread, Event
+from .utils.sniffer import get_interfaces, start_sniffer
 
 
-# View 정의
 class GraphView(APIView):
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         return render(request, "graph.html")
 
 
-class UpdateChartView(APIView):
-    protocol_info = {
-        "TCP": 0,
-        "UDP": 0,
-        "ICMP": 0,
-        "HTTP": 0,
-        "FTP": 0,
-        "DNS": 0,
-        "SSH": 0,
-    }
+class EdgeViewSet(viewsets.ViewSet):
+    stop_event = Event()
+    sniffer_thread = None
 
-    @classmethod
-    def update_protocol_counts(cls, protocol_name):
-        if protocol_name in cls.protocol_info:
-            cls.protocol_info[protocol_name] += 1
+    def list(self, request, *args, **kwargs):
+        return JsonResponse({"interfaces": list(get_interfaces())})
 
-    def get(self, request):
-        return JsonResponse(
-            self.protocol_info
-        )  # 수정: {'protocol_counts': self.protocol_info} -> self.protocol_info
+    @action(detail=False, methods=["get"])
+    def start(self, request, *args, **kwargs):
+        interfaces = get_interfaces()
+        selected_interface = list(interfaces)[0]
+        self.sniffer_thread = Thread(
+            target=start_sniffer, args=(selected_interface, self.stop_event)
+        )
+        self.sniffer_thread.start()
 
-    def post(self, request):
-        try:
-            data = request.data
-            protocol_name = list(data.keys())[0]
-            count = data[protocol_name]
-            self.update_protocol_counts(protocol_name)
-            return JsonResponse(
-                {"success": True, "protocol_counts": self.protocol_info}
-            )
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+        return HttpResponse("Success to start edge socket thread.")
+
+    @action(detail=False, methods=["get"])
+    def stop(self, request, *args, **kwargs):
+        self.stop_event.set()
+        self.sniffer_thread.join()
+
+        return HttpResponse("Success to stop edge socket thread.")
 
 
 class ProtocolViewSet(viewsets.ModelViewSet):
