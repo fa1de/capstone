@@ -17,20 +17,22 @@ class ProtocolInfoRequest:
 
 def handle_packet(packet):
     print("============== handle_packet ==============")
+    print(packet)
     packet = extract_packet(packet)
     if not packet:
+        print("packet is None")
         return
     print("============== packet ==============")
     print(packet)
 
     packet_data = packet["packet_data"]
-    logging.info(f"Processing packet data: {packet_data}")
+    logging.info("Processing packet data: %s", packet_data)
 
     matched_pattern = ""
 
     for pattern in rules:
-        if pattern.search(packet_data):
-            matched_pattern = pattern.pattern
+        if searched := pattern.search(packet_data):
+            matched_pattern = searched.group()
             break
 
     print("============== pattern ==============")
@@ -38,12 +40,17 @@ def handle_packet(packet):
 
     request = ProtocolInfoRequest(
         protocol_name=packet["protocol_name"],
-        source_ip="0.0.0.0",
-        target_ip="127.0.0.1",
+        source_ip=packet["source_ip"] if "source_ip" in packet else "127.0.0.1",
+        target_ip=packet["target_ip"] if "target_ip" in packet else "127.0.0.1",
         pattern=matched_pattern,
     )
     body = asdict(request)
 
-    send_to_server("/protocol-info", body)
+    print(body)
+
+    try:
+        send_to_server("/protocol", body)
+    except Exception as e:
+        logging.error(f"Failed to send data to server: {e}")
 
     return

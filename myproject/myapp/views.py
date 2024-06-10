@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.views import APIView
-from .models import ProtocolInfo, Protocol, Aggregate
+from .models import Protocol, Protocol, Aggregate
 from .serializers import ProtocolInfoSerializer, ProtocolSerializer, AggregateSerializer
 from django.db.models import F
 from threading import Thread, Event
@@ -15,7 +15,7 @@ class GraphView(APIView):
         return render(request, "graph.html")
 
 
-class EdgeViewSet(viewsets.ViewSet):
+class SniffViewSet(viewsets.ViewSet):
     stop_event = Event()
     sniffer_thread = None
 
@@ -38,7 +38,7 @@ class EdgeViewSet(viewsets.ViewSet):
         )
         self.sniffer_thread.start()
 
-        return HttpResponse("Success to start edge socket thread.")
+        return JsonResponse({"msg": "Success to start sniff socket thread."})
 
     @action(detail=False, methods=["get"])
     def stop(self, request, *args, **kwargs):
@@ -48,16 +48,19 @@ class EdgeViewSet(viewsets.ViewSet):
         self.sniffer_thread.join()
         self.sniffer_thread = None
 
-        return HttpResponse("Success to stop edge socket thread.")
+        return JsonResponse("Success to stop sniff socket thread.")
+
+
+def save_aggregate(key):
+    aggregate, created = Aggregate.objects.get_or_create(key=key, defaults={"value": 1})
+    if not created:
+        # 동시성 문제 방지
+        aggregate.value = F("value") + 1
+        aggregate.save()
 
 
 class ProtocolViewSet(viewsets.ModelViewSet):
     queryset = Protocol.objects.all()
-    serializer_class = ProtocolSerializer
-
-
-class ProtocolInfoViewSet(viewsets.ModelViewSet):
-    queryset = ProtocolInfo.objects.all()
     serializer_class = ProtocolInfoSerializer
 
     def create(self, request, *args, **kwargs):
@@ -65,29 +68,14 @@ class ProtocolInfoViewSet(viewsets.ModelViewSet):
 
         if response.status_code == status.HTTP_201_CREATED:
             print(response.data)
-            protocol_id = response.data["protocol_id"]
+            protocol_name = response.data["protocol_name"]
             source_ip = response.data["source_ip"]
             target_ip = response.data["target_ip"]
-            ip_key = f"{source_ip}_{target_ip}"
-            protocol_name = Protocol.objects.get(id=protocol_id).name
+            pattern = response.data["pattern"]
 
-            aggregate, created = Aggregate.objects.get_or_create(
-                key=f"protocol-{protocol_name}", defaults={"value": 1}
-            )
-
-            if not created:
-                # 동시성 문제 방지
-                aggregate.value = F("value") + 1
-                aggregate.save()
-
-            aggregate, created = Aggregate.objects.get_or_create(
-                key=f"ip-{ip_key}", defaults={"value": 1}
-            )
-
-            if not created:
-                # 동시성 문제 방지
-                aggregate.value = F("value") + 1
-                aggregate.save()
+            save_aggregate(f"protocol<|start|>{protocol_name}")
+            save_aggregate(f"ip<|start|>{source_ip}_{target_ip}")
+            save_aggregate(f"pattern<|start|>{protocol_name}-{pattern}")
 
         return response
 

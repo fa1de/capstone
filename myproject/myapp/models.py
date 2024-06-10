@@ -10,16 +10,7 @@ class Aggregate(models.Model):
 
 
 class Protocol(models.Model):
-    name = models.CharField(max_length=5, default=False)
-
-    def __str__(self):
-        return self.name
-
-
-class ProtocolInfo(models.Model):
-    protocol_id = models.ForeignKey(
-        Protocol, on_delete=models.CASCADE, related_name="protocols"
-    )
+    protocol_name = models.CharField(max_length=20, default=False)
     source_ip = models.CharField(max_length=20, default=False)
     target_ip = models.CharField(max_length=20, default=False)
     pattern = models.CharField(default="")

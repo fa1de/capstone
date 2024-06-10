@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Protocol, ProtocolInfo, Aggregate
+from .models import Protocol, Protocol, Aggregate
 
 
 class AggregateSerializer(serializers.ModelSerializer):
@@ -16,5 +16,5 @@ class ProtocolSerializer(serializers.ModelSerializer):
 
 class ProtocolInfoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProtocolInfo
+        model = Protocol
         fields = "__all__"

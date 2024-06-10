@@ -1,18 +1,17 @@
 from django.urls import path, include
 from .views import (
-    EdgeViewSet,
+    SniffViewSet,
     GraphView,
     ProtocolViewSet,
-    ProtocolInfoViewSet,
+    ProtocolViewSet,
     AggregateViewSet,
 )
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register(r"protocol", ProtocolViewSet)
-router.register(r"protocol-info", ProtocolInfoViewSet)
 router.register(r"aggregate", AggregateViewSet)
-router.register(r"edge", EdgeViewSet, basename="edge")
+router.register(r"sniff", SniffViewSet, basename="sniff")
 
 urlpatterns = [
     path("graph/", GraphView.as_view(), name="graph"),

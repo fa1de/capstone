@@ -1,4 +1,5 @@
 async function getChart() {
+  console.log("======== getChart ========");
   const protocol_response = await fetch("/protocol");
   const aggregate_response = await fetch("/aggregate");
 
@@ -11,42 +12,40 @@ async function getChart() {
 
   const protocols = [];
   const ips = [];
+  const patterns = [];
 
   aggregate_data.forEach((agg) => {
     const { key, value } = agg;
 
     console.log(key);
-    if (key.includes("protocol")) {
-      protocols.push({ name: key.split("-")[1], count: value });
-    }
-    if (key.includes("ip")) {
-      ips.push({ name: key.split("-")[1], count: value });
+    if (key.startsWith("protocol")) {
+      protocols.push({ name: key.split("<|start|>")[1], count: value });
+    } else if (key.startsWith("ip")) {
+      ips.push({ name: key.split("<|start|>")[1], count: value });
+    } else if (key.startsWith("pattern")) {
+      patterns.push({ name: key.split("<|start|>")[1], count: value });
     }
   });
 
   console.log("======== transformed chart data ========");
   console.log(protocols);
   console.log(ips);
+  console.log(patterns);
 
-  return { protocols, ips };
+  return { protocols, ips, patterns };
 }
 
-function initChart(data) {
+function initChart() {
   console.log("======== init chart ========");
-  console.log(data);
-  const { protocols, ips } = data;
-
-  console.log(protocols);
-  console.log(ips);
 
   const lineChartConfig = {
     type: "line",
     data: {
-      labels: protocols.map((p) => p.name),
+      labels: [],
       datasets: [
         {
           label: "Protocol Count",
-          data: protocols.map((p) => p.count),
+          data: [],
           fill: false,
           borderColor: "rgb(75, 192, 192)",
           tension: 0.1,
@@ -69,11 +68,11 @@ function initChart(data) {
   const barChartConfig = {
     type: "bar",
     data: {
-      labels: ips.map((p) => p.name),
+      labels: [],
       datasets: [
         {
           label: "Source_Target IP Count",
-          data: ips.map((p) => p.count),
+          data: [],
           backgroundColor: [
             "rgba(255, 99, 132, 0.2)",
             "rgba(54, 162, 235, 0.2)",
@@ -107,12 +106,12 @@ function initChart(data) {
   };
 
   return {
-    barChart: new Chart(
-      document.getElementById("barChart").getContext("2d"),
+    lineChart: new Chart(
+      document.getElementById("lineChart").getContext("2d"),
       lineChartConfig
     ),
-    donutChart: new Chart(
-      document.getElementById("lineChart").getContext("2d"),
+    barChart: new Chart(
+      document.getElementById("barChart").getContext("2d"),
       barChartConfig
     ),
   };
@@ -123,11 +122,33 @@ function updateChart(charts, data) {
   console.log(charts);
   console.log(data);
 
-  const { protocols, ips } = data;
+  const { protocols, ips, patterns } = data;
   const { lineChart, barChart } = charts;
 
-  lineChart.data.datasets[0].data = protocols.map((p) => p.count);
-  lineChart.update();
-  barChart.data.datasets[0].data = ips.map((p) => p.count);
+  protocols.sort((a, b) => a.name.localeCompare(b.name));
+  ips.sort((a, b) => a.name.localeCompare(b.name));
+
+  console.log(lineChart, barChart);
+
+  barChart.data.labels = protocols.map((p) => p.name);
+  barChart.data.datasets[0].data = protocols.map((p) => p.count);
   barChart.update();
+  lineChart.data.labels = ips.map((p) => p.name);
+  lineChart.data.datasets[0].data = ips.map((p) => p.count);
+  lineChart.update();
+
+  const tbody = document.getElementById("pattern-tbody");
+  tbody.innerHTML = "";
+
+  patterns.slice(0, 20).forEach((p) => {
+    const tr = document.createElement("tr");
+    const [protocol, pattern] = p.name.split("-");
+    const sliceLength = 100;
+    const modifiedPattern =
+      pattern.length > sliceLength
+        ? `${pattern.slice(0, sliceLength)}...`
+        : pattern;
+    tr.innerHTML = `<td>${protocol}</td><td>${modifiedPattern}</td> <td>${p.count}</td>`;
+    tbody.appendChild(tr);
+  });
 }

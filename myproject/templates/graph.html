@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{% static '/css/graph.css' %}" type="text/css">
     <script src="{% static '/javascripts/chart_utils.js' %}"></script>
     <script src="{% static '/javascripts/api.js' %}"></script>
-    <script src="{% static '/javascripts/services/edge_service.js' %}"></script>
+    <script src="{% static '/javascripts/services/sniff_service.js' %}"></script>
 </head>
 <body>
     <div class="header">
@@ -26,12 +26,12 @@
 
             <button class="btn" type="button">
                 <img src="../static/images/play.png"
-                width="24" height="24" onclick="javascript:start_edge(selected_interface_idx)"/>
+                width="24" height="24" onclick="javascript:start_sniff(selected_interface_idx)"/>
             </button>
 
             <button class="btn" type="button">
                 <img src="../static/images/stop.png"
-                width="24" height="24" onclick="javascript:stop_edge()" />
+                width="24" height="24" onclick="javascript:stop_sniff()" />
             </button>
         </div>
         <button class="btn print-btn" type="button" onclick="javascript:print()">
@@ -68,31 +68,12 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>IP</th>
+                            <th>Protocol</th>
+                            <th>Matched</th>
                             <th>Count</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>192.168.1.1</td>
-                            <td>10</td>
-                        </tr>
-                        <!-- Add more rows as needed -->
-                    </tbody>
-                </table>
-            </div>
-            <div class="table-box">
-                <div class="title">Blacklist IP</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>IP</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>192.168.1.1</td>
-                            </tr>
+                    <tbody id="pattern-tbody">
                     </tbody>
                 </table>
             </div>
@@ -104,6 +85,7 @@
 
         var interfaces = []
         var selected_interface_idx = -1
+        var patterns = []
 
         get_interfaces().then((data) => {
             console.log(data)
@@ -129,17 +111,22 @@
             })
         }).catch(e => console.error(`Failed to get interfaces. [${e}]`));
 
-        getChart().then((data) => {
-            const charts = initChart(data);
+        const charts = initChart();
 
-            updateChart(charts, data);
+        async function getData(){
+            try{
+                const data = await getChart();
+                updateChart(charts, data);
+            } catch(e) {
+                console.error(`Failed to get chart data. [${e}]`);
+            }
+        }
 
-            setInterval(() => {
-                getChart().then(updatedData => {
-                    updateChart(updatedData);
-                });
-            }, 3000);
-        }).catch(e => console.error(`Failed to get chart data. [${e}]`));
+        getData();
+
+        setInterval(() => {
+            getData();
+        }, 1000)
     </script>
 </body>
 </html>
