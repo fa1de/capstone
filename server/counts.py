@@ -21,7 +21,7 @@ def send_packet_counts_to_server(protocol_count, protocol_name):
         dest_IP="0.0.0.0",
         count=protocol_count,
     )
-    url = f"{SERVER_URL}/protocol-info/"
+    url = f"{SERVER_URL}/protocol/"
     body = asdict(request)
 
     print(url)
@@ -29,7 +29,7 @@ def send_packet_counts_to_server(protocol_count, protocol_name):
 
     try:
         response = requests.post(
-            f"{SERVER_URL}/protocol-info/",
+            f"{SERVER_URL}/protocol/",
             json=body,
         )
         response.raise_for_status()
