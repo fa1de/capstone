@@ -26,15 +26,15 @@
 
             <button class="btn" type="button">
                 <img src="../static/images/play.png"
-                width="24" height="24" onclick="javascript:start_edge()"/>
+                width="24" height="24" onclick="javascript:start_edge(selected_interface_idx)"/>
             </button>
 
             <button class="btn" type="button">
-                <img src="../static/images/play.png"
-                width="24" height="24" />
+                <img src="../static/images/stop.png"
+                width="24" height="24" onclick="javascript:stop_edge()" />
             </button>
         </div>
-        <button class="btn print-btn" type="button"      onclick="javascript:print()">
+        <button class="btn print-btn" type="button" onclick="javascript:print()">
                 <img src="../static/images/print.png"
                 width="24" height="24" />
         </button>
@@ -102,24 +102,29 @@
     <script>
         Chart.register(ChartDataLabels);
 
-        let interfaces = []
-        let selected_interface_idx = 0
+        var interfaces = []
+        var selected_interface_idx = -1
 
         get_interfaces().then((data) => {
-            print(data)
+            console.log(data)
             const select = document.getElementById('interface-select');
             select.innerHTML = '';
             select.addEventListener('change', function() {
-                var selected_interface_idx = this.value;
+                selected_interface_idx = this.value;
             });
 
-            print("test")
+            console.log("test")
+
+            const option = document.createElement('option')
+            option.value = -1
+            option.text = "인터페이스 선택"
+            select.appendChild(option)
 
             interfaces = [...data['interfaces']];
-            interfaces.forEach((i, interface) => {
+            interfaces.forEach((v, i) => {
                 const option = document.createElement('option')
                 option.value = i
-                option.text = interface
+                option.text = v
                 select.appendChild(option)
             })
         }).catch(e => console.error(`Failed to get interfaces. [${e}]`));

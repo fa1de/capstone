@@ -69,7 +69,7 @@ def extract_protocol_info(packet):
 
 
 def extract_ip_info(packet):
-    return {"source_ip": packet["IP"].src, "destination_ip": packet["IP"].dst}
+    return {"source_ip": packet["IP"].src, "target_ip": packet["IP"].dst}
 
 
 def extract_transport_info(packet):

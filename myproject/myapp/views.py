@@ -25,7 +25,14 @@ class EdgeViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["get"])
     def start(self, request, *args, **kwargs):
         interfaces = get_interfaces()
-        selected_interface = list(interfaces)[0]
+        interface = int(
+            request.query_params.get("i", -1)
+        )  # Default to 0 if not provided
+
+        if interface == -1:
+            raise ValueError("Invalid interface index")
+
+        selected_interface = list(interfaces)[interface]
         self.sniffer_thread = Thread(
             target=start_sniffer, args=(selected_interface, self.stop_event)
         )
@@ -36,7 +43,10 @@ class EdgeViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["get"])
     def stop(self, request, *args, **kwargs):
         self.stop_event.set()
+        if not self.sniffer_thread:
+            raise ValueError("Sniffer thread is not running")
         self.sniffer_thread.join()
+        self.sniffer_thread = None
 
         return HttpResponse("Success to stop edge socket thread.")
 

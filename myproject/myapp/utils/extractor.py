@@ -27,17 +27,17 @@ def extract_packet(packet):
 
 
 def extract_ip_info(packet):
-    return {"source_ip": packet["IP"].src, "destination_ip": packet["IP"].dst}
+    return {"source_ip": packet["IP"].src, "target_ip": packet["IP"].dst}
 
 
 def extract_transport_info(packet):
     transport_info = {}
     if packet.haslayer("TCP"):
         transport_info["source_port"] = packet["TCP"].sport
-        transport_info["destination_port"] = packet["TCP"].dport
+        transport_info["target_port"] = packet["TCP"].dport
     elif packet.haslayer("UDP"):
         transport_info["source_port"] = packet["UDP"].sport
-        transport_info["destination_port"] = packet["UDP"].dport
+        transport_info["target_port"] = packet["UDP"].dport
     return transport_info
 
 
