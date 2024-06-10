@@ -11,7 +11,9 @@ from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register(r"protocol", ProtocolViewSet)
 router.register(r"aggregate", AggregateViewSet)
-router.register(r"sniff", SniffViewSet, basename="sniff")
+router.register(
+    r"sniff", SniffViewSet, basename="sniffmyproject/static/images/favicon.ico"
+)
 
 urlpatterns = [
     path("graph/", GraphView.as_view(), name="graph"),
