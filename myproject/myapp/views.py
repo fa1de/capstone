@@ -4,7 +4,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.views import APIView
 from .models import Protocol, Protocol, Aggregate
-from .serializers import ProtocolInfoSerializer, ProtocolSerializer, AggregateSerializer
+from .serializers import ProtocolInfoSerializer, AggregateSerializer
 from django.db.models import F
 from threading import Thread, Event
 from .utils.sniffer import get_interfaces, start_sniffer
