@@ -44,7 +44,7 @@ function initChart() {
       labels: [],
       datasets: [
         {
-          label: "Protocol Count",
+          label: "Source_Target IP Count",
           data: [],
           fill: false,
           borderColor: "rgb(75, 192, 192)",
@@ -68,10 +68,10 @@ function initChart() {
   const barChartConfig = {
     type: "bar",
     data: {
-      labels: [],
+      labels: ["TCP", "UDP", "ICMP", "DNS", "HTTP", "FTP", "SSH"],
       datasets: [
         {
-          label: "Source_Target IP Count",
+          label: "Protocol Count",
           data: [],
           backgroundColor: [
             "rgba(255, 99, 132, 0.2)",
@@ -130,7 +130,7 @@ function updateChart(charts, data) {
 
   console.log(lineChart, barChart);
 
-  barChart.data.labels = protocols.map((p) => p.name);
+  // barChart.data.labels = protocols.map((p) => p.name);
   barChart.data.datasets[0].data = protocols.map((p) => p.count);
   barChart.update();
   lineChart.data.labels = ips.map((p) => p.name);
