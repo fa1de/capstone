@@ -1,50 +1,43 @@
-from scapy.all import sniff, wrpcap
-import pyshark
-import psutil
-from threading import Thread, Event
-import keyboard 
+import re
 
-def get_interfaces():
-    return psutil.net_if_addrs().keys()
+# TCP 패킷 정규표현식
+tcp_packet = re.compile(
+    r"##\#[ TCP ]###.*sport\s+=\s+(?P<source_port>\w+).*dport\s+=\s+(?P<dest_port>\w+).*seq\s+=\s+(?P<seq_num>\d+).*ack\s+=\s+(?P<ack_num>\d+)",
+    re.DOTALL,
+)
 
-def packet_sniffer(packet):
-    print(packet.summary())
-    wrpcap('captured_packets.pcap', packet, append=True)
+# UDP 패킷 정규표현식
+udp_packet = re.compile(
+    r"##\#[ UDP ]###.*sport\s+=\s+(?P<source_port>\w+).*dport\s+=\s+(?P<dest_port>\w+)",
+    re.DOTALL,
+)
 
-def pyshark_sniffer(interface, stop_event):
-    capture = pyshark.LiveCapture(interface=interface)
-    for packet in capture.sniff_continuously():
-        if stop_event.is_set(): 
-            break
-        print(packet)
-        with open('capyshark_packets.txt', 'a') as f:
-            f.write(str(packet) + '\n')
+# ICMP 패킷 정규표현식
+icmp_packet = re.compile(
+    r"##\#[ ICMP ]###.*type\s+=\s+(?P<type>\d+).*code\s+=\s+(?P<code>\d+).*chksum\s+=\s+(?P<checksum>\w+)",
+    re.DOTALL,
+)
 
-def start_scapy_sniffer(interface, stop_event):
-    def stop_sniffer(packet):
-        return stop_event.is_set() 
-    sniff(prn=packet_sniffer, iface=interface, stop_filter=stop_sniffer)
+# DNS 패킷 정규표현식
+dns_packet = re.compile(
+    r"##\#[ DNS ]###.*qd\s+qname\s+=\s+(?P<query_name>[\w\.]+).*an\s+rdata\s+=\s+(?P<response_data>[\w\.]+)?",
+    re.DOTALL,
+)
 
-if __name__ == "__main__":
-    stop_event = Event() 
+# HTTP 패킷 정규표현식
+http_packet = re.compile(
+    r"##\#[ HTTP ]###.*Method\s+=\s+(?P<method>\w+).*Path\s+=\s+(?P<uri>[^\s]+).*Http_Version\s+=\s+(?P<version>[^\s]+)",
+    re.DOTALL,
+)
 
-    interfaces = get_interfaces()
-    print("Available interfaces: ")
-    for index, interface in enumerate(interfaces):
-        print(f"{index + 1}. {interface}")
-    choice = int(input("Select the interface by number: "))
-    selected_interface = list(interfaces)[choice - 1]
-    
-    scapy_thread = Thread(target=start_scapy_sniffer, args=(selected_interface, stop_event))
-    pyshark_thread = Thread(target=pyshark_sniffer, args=(selected_interface, stop_event))
-    
-    scapy_thread.start()
-    pyshark_thread.start()
+# FTP 패킷 정규표현식
+ftp_packet = re.compile(
+    r"##\#[ FTP ]###.*Command\s+=\s+(?P<command>\w+).*Field_A\s+=\s+(?P<username>\w+).*Field_B\s+=\s+(?P<password>\w+)",
+    re.DOTALL,
+)
 
-    print("Press 'q' to stop the capture")
-    keyboard.wait('q') 
-    stop_event.set() 
-
-    scapy_thread.join()
-    pyshark_thread.join()
-    print("Packet capture stopped.")
+# SSH 패킷 정규표현식
+ssh_packet = re.compile(
+    r"##\#[ SSH ]###.*kex_algorithms\s+=\s+(?P<version>[\w\-]+).*encryption_algorithms_client_to_server\s+=\s+(?P<algorithm>[\w\-]+).*user\s+=\s+(?P<username>\w+)",
+    re.DOTALL,
+)
