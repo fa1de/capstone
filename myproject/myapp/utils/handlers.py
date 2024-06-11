@@ -5,6 +5,7 @@ from .rules import rules
 from .extractor import extract_packet
 from .sender import send_to_server
 from .rules import rules
+from .logger import logger
 
 
 @dataclass
@@ -27,7 +28,7 @@ def handle_packet(packet):
         print(packet)
 
         packet_data = packet["packet_data"]
-        logging.info("Processing packet data: %s", packet_data)
+        logger.info("Processing packet data: %s", packet_data)
 
         matched_pattern = ""
 
@@ -51,6 +52,6 @@ def handle_packet(packet):
 
         send_to_server("/protocol", body)
     except Exception as e:
-        logging.error(f"Failed to send data to server: {e}")
+        logger.error(f"Failed to send data to server: {e}")
 
     return
