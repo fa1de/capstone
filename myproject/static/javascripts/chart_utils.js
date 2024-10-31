@@ -68,7 +68,7 @@ function initChart() {
   const barChartConfig = {
     type: "bar",
     data: {
-      labels: ["TCP", "UDP", "ICMP", "DNS", "HTTP", "FTP", "SSH"],
+      labels: [],
       datasets: [
         {
           label: "Protocol Count",
@@ -130,7 +130,7 @@ function updateChart(charts, data) {
 
   console.log(lineChart, barChart);
 
-  // barChart.data.labels = protocols.map((p) => p.name);
+  barChart.data.labels = protocols.map((p) => p.name);
   barChart.data.datasets[0].data = protocols.map((p) => p.count);
   barChart.update();
   lineChart.data.labels = ips.map((p) => p.name);

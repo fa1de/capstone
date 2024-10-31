@@ -83,3 +83,20 @@ class ProtocolViewSet(viewsets.ModelViewSet):
 class AggregateViewSet(viewsets.ModelViewSet):
     queryset = Aggregate.objects.all()
     serializer_class = AggregateSerializer
+
+def login(request):
+    return render(request, 'login.html')
+
+def main(request):
+    return render(request, 'main.html')
+
+def save_regex(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        pattern = request.POST.get('pattern')
+        # 여기에 정규 표현식을 저장하는 로직 추가
+        return redirect('main_page')  # 메인 페이지로 리다이렉션
+
+def test_regex(request):
+    # 정규 표현식을 테스트하는 로직을 여기에 추가
+    return HttpResponse("Testing regular expression.")  # 임시 응답

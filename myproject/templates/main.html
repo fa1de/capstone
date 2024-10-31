@@ -1,0 +1,100 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{% static '/css/main.css' %}" type="text/css">
+    <script>
+        function confirmDelete() {
+            return confirm('정말로 삭제하시겠습니까?');
+        }
+    </script>
+</head>
+<body>
+
+<!-- 네비게이션 바 -->
+<div class="navbar">
+    <h1>Admin Dashboard</h1>
+</div>
+
+<!-- 메인 컨텐츠 -->
+<div class="container">
+    <h2>Welcome, Admin</h2>
+    <p>Select an option to manage:</p>
+
+    <div class="card">
+        <h3>Regular Expression</h3>
+        <p>Create, edit, or delete regular expression</p>
+        <form method="post" action="{% url 'main_page' %}">
+            {% csrf_token %}
+            <label for="name">정규 표현식 이름:</label>
+            <input type="text" name="name" id="name"><br><br>
+        
+            <label for="pattern">정규 표현식 패턴:</label>
+            <input type="text" name="pattern" id="pattern"><br><br>
+        
+            <button type="submit">저장</button>
+        </form>
+
+        <h2>저장된 정규 표현식 목록</h2>
+        <ul>
+            {% for regex in regex_list %}
+            <li>
+                {{ regex.name }}: {{ regex.pattern }}
+                <form method="post" action="{% url 'edit_regex' regex.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">수정</button>
+                </form>
+                <form method="post" action="{% url 'delete_regex' regex.id %}" onsubmit="return confirmDelete();" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">삭제</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- 정규 표현식 테스트 폼 -->
+        <h2>정규 표현식 테스트</h2>
+        <form method="post" action="{% url 'test_regex' %}">
+            {% csrf_token %}
+            <label for="pattern">정규 표현식 패턴:</label>
+            <input type="text" name="pattern" id="pattern" value="{{ pattern }}"><br><br>
+
+            <label for="test_string">테스트할 문자열:</label>
+            <textarea name="test_string" id="test_string">{{ test_string }}</textarea><br><br>
+
+            <button type="submit">테스트</button>
+        </form>
+
+        <!-- 테스트 결과 표시 -->
+        {% if matches %}
+            <h3>결과:</h3>
+            <ul>
+                {% if matches == "Invalid Regex Pattern" %}
+                    <li>{{ matches }}</li>
+                {% else %}
+                    {% for match in matches %}
+                        <li>{{ match }}</li>
+                    {% endfor %}
+                {% endif %}
+            </ul>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3>Settings</h3>
+        <p>Update site settings</p>
+        <button>Go to Settings</button>
+    </div>
+</div>
+
+<!-- 푸터 -->
+<footer>
+    &copy; 2024 Admin Dashboard. All rights reserved.
+</footer>
+
+</body>
+</html>
