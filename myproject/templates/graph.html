@@ -10,19 +10,20 @@
     <link rel="stylesheet" href="/static/ex.css" type="text/css">
 </head>
 <body>      
-    <div id= "top", style="border: 2px solid;"></div>
+    <div id= "top"></div>
     
-    <button type="button" id="button" > <img src="./start.png" width="45px" height="50px" /></button>
+        <button type="button" id="button" > <img src="../static/start.png" width="50px" height="50px" /></button>
     
-    <select id="option">
-        <option value="none">인터페이스 선택</option>
-        <option>1</option>
-        <option>2</option>
-        <option>3</option>
-        <option>4</option>
-    </select>
+        <select id="option">
+            <option value="none">인터페이스 선택</option>
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+        </select>
 
-    <input type="button" value="실행" id="start" ></button>
+        <input type="button" value="Start" id="start" ></button>
+    
 
     <div id="chart-container">
         <canvas id="myLineChart"></canvas>
@@ -71,36 +72,45 @@
         });
     
         function updateChart() {
-            fetch('/packet')
-                .then(response => response.json())
-                .then(data => {
-                    const protocolCounts = data;
-                    console.log('Protocol counts:', protocolCounts);
+            fetch('/packet/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    protocol_name: document.getElementById('option').value // 프로토콜 선택 옵션에서 값을 가져와서 전송
+                })
+            })
+            .then(response => response.json())
+            .then(protocolCounts => {
+                console.log('Protocol counts:', protocolCounts);
         
-                    // 카운트 값 배열 초기화
-                    const counts = [0, 0, 0, 0, 0, 0, 0];
+                // 프로토콜별 카운트를 저장할 객체 초기화
+                const countMap = {
+                    'TCP': 0,
+                    'UDP': 0,
+                    'ICMP': 0,
+                    'HTTP': 0,
+                    'FTP': 0,
+                    'DNS': 0,
+                    'SSH': 0
+                };
         
-                    // 데이터 배열 순회하며 카운트 값 추출
                     for (const key in protocolCounts) {
                         if (Object.hasOwnProperty.call(protocolCounts, key)) {
                             const item = protocolCounts[key];
-                            if (item.protocol_name === 'TCP') {
-                                counts[0] += item.count;
-                            } else if (item.protocol_name === 'UDP') {
-                                counts[1] += item.count;
-                            } else if (item.protocol_name === 'ICMP') {
-                                counts[2] += item.count;
-                            } else if (item.protocol_name === 'HTTP') {
-                                counts[3] += item.count;
-                            } else if (item.protocol_name === 'FTP') {
-                                counts[4] += item.count;
-                            } else if (item.protocol_name === 'DNS') {
-                                counts[5] += item.count;
-                            } else if (item.protocol_name === 'SSH') {
-                                counts[6] += item.count;
+                            const protocolName = item.protocol_name;
+                            if (typeof protocolName === 'string') { // 문자열인 경우에만 처리
+                                if (countMap.hasOwnProperty(protocolName)) {
+                                    // 해당하는 프로토콜의 카운트 값을 서버로부터 받아온 값으로 업데이트
+                                    countMap[protocolName] = item.count;
+                                }
                             }
                         }
                     }
+        
+                    // 카운트 값 배열 초기화
+                    const counts = Object.values(countMap);
         
                     // 그래프 업데이트
                     myLineChart.data.datasets[0].data = counts;
@@ -166,14 +176,15 @@
     <div id= "list1" style="border: 2px solid;"></div>
     <hr id="line1" style="border: solid 1px; "/>
     <b id="list1_text">
-        정규표현식 매칭 패킷
+        Regex Matching Packet
     </b>
 
-    <div id= "list2" style="border: 2px solid;"></div>
-    <hr id="line2" style="border: solid 1px; "/>
-    <b id="list2_text">
-        블랙리스트 IP
-    </b>
+     <!-- 새로운 패킷 정보 칸 추가 -->
+     <div id="list2" style="border: 2px solid; margin-top: 10px;"></div>
+     <hr id="line2" style="border: solid 1px;"/>
+     <b id="list2_text">Blacklist IP</b>
+    
+    
 
 </body>
 

@@ -49,6 +49,11 @@ class UpdateChartView(APIView):
             )
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+    
+    def main_view(request):
+        # 뷰의 로직
+        return render(request, 'main.html')
+       
 
 
 class PacketView(viewsets.ModelViewSet):
