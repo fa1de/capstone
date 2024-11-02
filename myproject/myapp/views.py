@@ -6,8 +6,11 @@ from rest_framework.views import APIView
 from .models import Protocol, Protocol, Aggregate
 from .serializers import ProtocolInfoSerializer, AggregateSerializer
 from django.db.models import F
+from django.views.decorators.csrf import csrf_exempt
+import json
 from threading import Thread, Event
 from .utils.sniffer import get_interfaces, start_sniffer
+
 
 
 class GraphView(APIView):
@@ -79,6 +82,21 @@ class ProtocolViewSet(viewsets.ModelViewSet):
 
         return response
 
+@csrf_exempt  # CSRF 검증을 비활성화합니다. (필요에 따라 설정 변경 가능)
+def save_code(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            code = data.get('code')
+            
+            # rules.py 파일에 코드 저장
+            with open('rules.py', 'w') as file:
+                file.write(code)
+            
+            return JsonResponse({"message": "Code saved successfully!"}, status=200)
+        except Exception as e:
+            return JsonResponse({"message": "Failed to save code", "error": str(e)}, status=500)
+    return JsonResponse({"message": "Invalid request"}, status=400)
 
 class AggregateViewSet(viewsets.ModelViewSet):
     queryset = Aggregate.objects.all()
@@ -89,6 +107,9 @@ def login(request):
 
 def main(request):
     return render(request, 'main.html')
+
+def test(request):
+    return render(request, 'test.html')
 
 def save_regex(request):
     if request.method == 'POST':

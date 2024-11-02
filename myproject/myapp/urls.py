@@ -6,6 +6,7 @@ from .views import (
     ProtocolViewSet,
     AggregateViewSet,
     login,
+    test,
     main,
     save_regex
 )
@@ -25,6 +26,8 @@ urlpatterns = [
     path("login/", view=login, name="login"),
     path("main/", views.main, name="main"),
     path('main/', views.main, name='main_page'),
+    path('test/', views.test, name='test'),
     path('save-regex/', views.save_regex, name='save_regex'),  # 정규 표현식 저장 URL
     path('test-regex/', views.test_regex, name='test_regex'),  # 정규 표현식 테스트 URL
+    path('save-code/', views.save_code, name='save_code'),
 ]
