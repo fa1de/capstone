@@ -7,96 +7,46 @@ body {
     padding: 20px;
 }
 
-.navbar {
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px;
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-}
-
-.container {
-    margin-top: 20px;
+.header {
+    width: calc(100%-24px);
+    height: 64px;
+    margin: 12px 0;
+    padding: 0 12px;
     display: flex;
-    flex-direction: column;
-    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
 }
 
-.card {
-    background-color: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+.header-left-container {
+    position: absolute; /* 수정: 위치를 절대값으로 변경하여 왼쪽에 배치 */
+    left: 40px; /* 왼쪽 여백 */
+}
+
+.header-title {
+    font-family: "Do Hyeo", sans-serif;
+    font-size: 27px; /* 제목 크기 */
+    color: #3b3b3b; /* 제목 색상 */
+    text-align: center; /* 텍스트 중앙 정렬 */
+    margin: 0; /* 기본 여백 제거 */
+    font-weight: bold;
+}
+#editor { 
+    width: 95%; 
+    height: 580px; 
+    border: 1px solid #ccc;
+    margin: 0 auto;
+}
+
+#saveButton { 
+    margin-top: 10px; 
+    align-items: center;
+    margin-left: 40px;
 }
 
 h2 {
-    font-size: 24px;
-    margin-bottom: 10px;
+    text-align: left; /* 왼쪽 정렬 */
+    margin-left: 40px; /* 왼쪽 간격 추가 */
 }
 
-h3 {
-    font-size: 20px;
-    margin-bottom: 10px;
-}
-
-label {
-    font-weight: bold;
-}
-
-input[type="text"],
-textarea {
-    width: calc(100% - 24px);
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 5px;
-    border: 1px solid #ddd;
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
-}
-
-button {
-    border-radius: 10px;
-    border: none;
-    padding: 10px 15px;
-    background-color: #4CAF50;
-    color: white;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-button:hover {
-    opacity: 0.8;
-}
-
-button:active {
-    opacity: 0.6;
-}
-
-ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-li {
-    margin: 10px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-footer {
-    margin-top: 20px;
-    text-align: center;
-    font-size: 14px;
-    color: #888;
-}
-
-@media (max-width: 1024px) {
-    .container {
-        padding: 10px;
-    }
-
-    input[type="text"],
-    textarea {
-        width: calc(100% - 20px);
-    }
-}
