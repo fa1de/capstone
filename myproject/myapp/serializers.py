@@ -1,10 +1,20 @@
 from rest_framework import serializers
-from .models import ProtocolInfo
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from .models import Protocol, Protocol, Aggregate
 
 
-class PacketSerializer(serializers.ModelSerializer):
+class AggregateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProtocolInfo
-        fields = ["protocol_name", "count"]
+        model = Aggregate
+        fields = "__all__"
+
+
+class ProtocolSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Protocol
+        fields = "__all__"
+
+
+class ProtocolInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Protocol
+        fields = "__all__"

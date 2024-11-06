@@ -1,3 +1,5 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,188 +7,129 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- chartjs-plugin-datalabels 플러그인 추가 -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <link rel="stylesheet" href="/static/ex.css" type="text/css">
+    <link rel="stylesheet" href="{% static '/css/graph.css' %}" type="text/css">
+    <script src="{% static '/javascripts/chart_utils.js' %}"></script>
+    <script src="{% static '/javascripts/api.js' %}"></script>
+    <script src="{% static '/javascripts/services/sniff_service.js' %}"></script>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'favicon.ico' %}">
 </head>
-<body>      
-    <div id= "top"></div>
-    
-        <button type="button" id="button" > <img src="../static/start.png" width="50px" height="50px" /></button>
-    
-        <select id="option">
-            <option value="none">인터페이스 선택</option>
-            <option>1</option>
-            <option>2</option>
-            <option>3</option>
-            <option>4</option>
-        </select>
+<body>
+    <div class="header">
+        <div class=header-left-container>
+            <img src="{% static '/logo.png' %}" width="100" height="40" />
+            <select id="interface-select" class="select">
+                <option value="none">인터페이스 선택</option>
+            </select>
 
-        <input type="button" value="Start" id="start" ></button>
-    
+            <button class="btn" type="button">
+                <img src="../static/images/play.png"
+                width="24" height="24" onclick="javascript:start_sniff(selected_interface_idx)"/>
+            </button>
 
-    <div id="chart-container">
-        <canvas id="myLineChart"></canvas>
-        <canvas id="myBarChart"></canvas>
+            <button class="btn" type="button">
+                <img src="../static/images/stop.png"
+                width="24" height="24" onclick="javascript:stop_sniff()" />
+            </button>
+
+            <button class="btn" type="button">
+                <img src="../static/images/admin.png"
+                width="24" height="24" onclick="window.location.href='http://127.0.0.1:8000/login';" />
+            </button>
+        </div>
+        <button class="btn print-btn" type="button" onclick="javascript:print()">
+                <img src="../static/images/print.png"
+                width="24" height="24" />
+        </button>
     </div>
 
-    <div id= "line" style="border: 2px solid;"></div>
+
+
+    <div class="dashboard-container">
+        <div class="chart-container">
+            <div class="chart-box">
+                <div class="title">Protocol Count</div>
+                <canvas id="barChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <div class="title">IP Count</div>
+                <div class="ip-box">
+                    <canvas id="lineChart"></canvas>
+                    {% comment %} <div class="anomaly-detection-box">
+                        <div>이상 감지</div>
+                        <div class="divider"></div>
+                        <div class="content">0.0.0.0_0.0.0.0 DDos 공격이 의심됩니다.</div>
+                    </div> {% endcomment %}
+                </div>
+
+
+            </div>    
+        </div>
+        <div class="table-container">
+            <div class="table-box">
+                <div class="title">Regex Matching Packet</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Protocol</th>
+                            <th>Matched</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pattern-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // chartjs-plugin-datalabels 플러그인을 등록합니다.
         Chart.register(ChartDataLabels);
-        
-        var ctxLine = document.getElementById('myLineChart').getContext('2d');
-        var myLineChart = new Chart(ctxLine, {
-            type: 'line',
-            data: {
-                labels: ['TCP', 'UDP', 'ICMP', 'HTTP', 'FTP', 'DNS', 'SSH'],
-                datasets: [{
-                    label: 'Protocol Count',
-                    data: [0, 0, 0, 0, 0, 0, 0], // 초기 카운트를 0으로 설정합니다.
-                    fill: false,
-                    borderColor: 'rgb(75, 192, 192)',
-                    tension: 0.1
-                }]
-            },
-            options: {
-                plugins: {
-                    datalabels: {
-                        color: 'red',
-                        formatter: function(value, context) {
-                            return value;
-                        },
-                        align: 'end',
-                        anchor: 'end',
-                        font: {
-                            weight: 'bold'
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    
-        function updateChart() {
-            fetch('/packet/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    protocol_name: document.getElementById('option').value // 프로토콜 선택 옵션에서 값을 가져와서 전송
-                })
+
+        var interfaces = []
+        var selected_interface_idx = -1
+        var patterns = []
+
+        get_interfaces().then((data) => {
+            console.log(data)
+            const select = document.getElementById('interface-select');
+            select.innerHTML = '';
+            select.addEventListener('change', function() {
+                selected_interface_idx = this.value;
+            });
+
+            console.log("test")
+
+            const option = document.createElement('option')
+            option.value = -1
+            option.text = "인터페이스 선택"
+            select.appendChild(option)
+
+            interfaces = [...data['interfaces']];
+            interfaces.forEach((v, i) => {
+                const option = document.createElement('option')
+                option.value = i
+                option.text = v
+                select.appendChild(option)
             })
-            .then(response => response.json())
-            .then(protocolCounts => {
-                console.log('Protocol counts:', protocolCounts);
-        
-                // 프로토콜별 카운트를 저장할 객체 초기화
-                const countMap = {
-                    'TCP': 0,
-                    'UDP': 0,
-                    'ICMP': 0,
-                    'HTTP': 0,
-                    'FTP': 0,
-                    'DNS': 0,
-                    'SSH': 0
-                };
-        
-                    for (const key in protocolCounts) {
-                        if (Object.hasOwnProperty.call(protocolCounts, key)) {
-                            const item = protocolCounts[key];
-                            const protocolName = item.protocol_name;
-                            if (typeof protocolName === 'string') { // 문자열인 경우에만 처리
-                                if (countMap.hasOwnProperty(protocolName)) {
-                                    // 해당하는 프로토콜의 카운트 값을 서버로부터 받아온 값으로 업데이트
-                                    countMap[protocolName] = item.count;
-                                }
-                            }
-                        }
-                    }
-        
-                    // 카운트 값 배열 초기화
-                    const counts = Object.values(countMap);
-        
-                    // 그래프 업데이트
-                    myLineChart.data.datasets[0].data = counts;
-                    myLineChart.update();
-                })
-                .catch(error => console.error('Error fetching data:', error));
-        }
-    
-        // 초기 그래프 업데이트 호출
-        updateChart();
-    
-        // 주기적으로 그래프 업데이트
-        setInterval(updateChart, 3000);
-    </script>
-    
-    
+        }).catch(e => console.error(`Failed to get interfaces. [${e}]`));
 
-    <div id= "bar" style="border: 2px solid;"></div>
+        const charts = initChart();
 
-    <script>
-        var ctxBar = document.getElementById('myBarChart').getContext('2d');
-        var myBarChart = new Chart(ctxBar, {
-            type: 'bar',
-            data: {
-                labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-                datasets: [{
-                    label: 'Sample Data',
-                    data: [12, 19, 3, 5, 2, 3],
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.2)',
-                        'rgba(54, 162, 235, 0.2)',
-                        'rgba(255, 206, 86, 0.2)',
-                        'rgba(75, 192, 192, 0.2)',
-                        'rgba(153, 102, 255, 0.2)',
-                        'rgba(255, 159, 64, 0.2)'
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)',
-                        'rgba(153, 102, 255, 1)',
-                        'rgba(255, 159, 64, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                plugins: {
-                    datalabels: {
-                        color: 'red',
-                        align: 'end',
-                        anchor: 'end',
-                        font: {
-                            weight: 'bold'
-                        }
-                    }
-                }
+        async function getData(){
+            try{
+                const data = await getChart();
+                updateChart(charts, data);
+            } catch(e) {
+                console.error(`Failed to get chart data. [${e}]`);
             }
-        });
+        }
+
+        getData();
+
+        setInterval(() => {
+            getData();
+        }, 1000)
     </script>
-
-    <div id= "list1" style="border: 2px solid;"></div>
-    <hr id="line1" style="border: solid 1px; "/>
-    <b id="list1_text">
-        Regex Matching Packet
-    </b>
-
-     <!-- 새로운 패킷 정보 칸 추가 -->
-     <div id="list2" style="border: 2px solid; margin-top: 10px;"></div>
-     <hr id="line2" style="border: solid 1px;"/>
-     <b id="list2_text">Blacklist IP</b>
-    
-    
-
 </body>
-
-
-    </html>
+</html>

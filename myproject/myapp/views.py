@@ -1,61 +1,123 @@
 from django.shortcuts import render
-from django.http import JsonResponse
-import json
-import requests
-from rest_framework import viewsets, serializers
-from myapp.serializers import PacketSerializer
-from myapp.models import ProtocolInfo
+from django.http import HttpResponse, JsonResponse
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
+from .models import Protocol, Protocol, Aggregate
+from .serializers import ProtocolInfoSerializer, AggregateSerializer
+from django.db.models import F
+from django.views.decorators.csrf import csrf_exempt
+import json
+from threading import Thread, Event
+from .utils.sniffer import get_interfaces, start_sniffer
 
 
-# View 정의
+
 class GraphView(APIView):
-    def get(self, request):
-        protocols = ["TCP", "UDP", "ICMP", "HTTP", "FTP", "DNS", "SSH"]
-        return render(request, "graph.html", {"protocols": protocols})
+    def get(self, request, *args, **kwargs):
+        return render(request, "graph.html")
 
 
-class UpdateChartView(APIView):
-    protocol_info = {
-        "TCP": 0,
-        "UDP": 0,
-        "ICMP": 0,
-        "HTTP": 0,
-        "FTP": 0,
-        "DNS": 0,
-        "SSH": 0,
-    }
+class SniffViewSet(viewsets.ViewSet):
+    stop_event = Event()
+    sniffer_thread = None
 
-    @classmethod
-    def update_protocol_counts(cls, protocol_name):
-        if protocol_name in cls.protocol_info:
-            cls.protocol_info[protocol_name] += 1
+    def list(self, request, *args, **kwargs):
+        return JsonResponse({"interfaces": list(get_interfaces())})
 
-    def get(self, request):
-        return JsonResponse(
-            self.protocol_info
-        )  # 수정: {'protocol_counts': self.protocol_info} -> self.protocol_info
+    @action(detail=False, methods=["get"])
+    def start(self, request, *args, **kwargs):
+        interfaces = get_interfaces()
+        interface = int(
+            request.query_params.get("i", -1)
+        )  # Default to 0 if not provided
 
-    def post(self, request):
+        if interface == -1:
+            raise ValueError("Invalid interface index")
+
+        selected_interface = list(interfaces)[interface]
+        self.sniffer_thread = Thread(
+            target=start_sniffer, args=(selected_interface, self.stop_event)
+        )
+        self.sniffer_thread.start()
+
+        return JsonResponse({"msg": "Success to start sniff socket thread."})
+
+    @action(detail=False, methods=["get"])
+    def stop(self, request, *args, **kwargs):
+        self.stop_event.set()
+        if not self.sniffer_thread:
+            raise ValueError("Sniffer thread is not running")
+        self.sniffer_thread.join()
+        self.sniffer_thread = None
+
+        return JsonResponse("Success to stop sniff socket thread.")
+
+
+def save_aggregate(key):
+    aggregate, created = Aggregate.objects.get_or_create(key=key, defaults={"value": 1})
+    if not created:
+        # 동시성 문제 방지
+        aggregate.value = F("value") + 1
+        aggregate.save()
+
+
+class ProtocolViewSet(viewsets.ModelViewSet):
+    queryset = Protocol.objects.all()
+    serializer_class = ProtocolInfoSerializer
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+
+        if response.status_code == status.HTTP_201_CREATED:
+            print(response.data)
+            protocol_name = response.data["protocol_name"]
+            source_ip = response.data["source_ip"]
+            target_ip = response.data["target_ip"]
+            pattern = response.data["pattern"]
+
+            save_aggregate(f"protocol<|start|>{protocol_name}")
+            save_aggregate(f"ip<|start|>{source_ip}_{target_ip}")
+            save_aggregate(f"pattern<|start|>{protocol_name}-{pattern}")
+
+        return response
+
+@csrf_exempt  # CSRF 검증을 비활성화합니다. (필요에 따라 설정 변경 가능)
+def save_code(request):
+    if request.method == 'POST':
         try:
-            data = request.data
-            protocol_name = list(data.keys())[0]
-            count = data[protocol_name]
-            self.update_protocol_counts(protocol_name)
-            return JsonResponse(
-                {"success": True, "protocol_counts": self.protocol_info}
-            )
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
-    
-    def main_view(request):
-        # 뷰의 로직
-        return render(request, 'main.html')
-       
+            data = json.loads(request.body)
+            code = data.get('code')
+            
+            # rules.py 파일에 코드 저장
+            with open('rules.py', 'w') as file:
+                file.write(code)
+            
+            return JsonResponse({"message": "Code saved successfully!"}, status=200)
+        except Exception as e:
+            return JsonResponse({"message": "Failed to save code", "error": str(e)}, status=500)
+    return JsonResponse({"message": "Invalid request"}, status=400)
 
+class AggregateViewSet(viewsets.ModelViewSet):
+    queryset = Aggregate.objects.all()
+    serializer_class = AggregateSerializer
 
-class PacketView(viewsets.ModelViewSet):
-    queryset = ProtocolInfo.objects.all()
-    serializer_class = PacketSerializer
+def login(request):
+    return render(request, 'login.html')
+
+def main(request):
+    return render(request, 'main.html')
+
+def test(request):
+    return render(request, 'test.html')
+
+def save_regex(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        pattern = request.POST.get('pattern')
+        # 여기에 정규 표현식을 저장하는 로직 추가
+        return redirect('main_page')  # 메인 페이지로 리다이렉션
+
+def test_regex(request):
+    # 정규 표현식을 테스트하는 로직을 여기에 추가
+    return HttpResponse("Testing regular expression.")  # 임시 응답

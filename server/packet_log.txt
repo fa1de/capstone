@@ -1,6 +1,0 @@
-2024-06-08 16:24:39,037 - No IPv4 address found on anpi0 !
-2024-06-08 16:24:39,042 - No IPv4 address found on anpi1 !
-2024-06-08 16:24:39,045 - more No IPv4 address found on en3 !
-2024-06-08 16:25:40,066 - No IPv4 address found on anpi0 !
-2024-06-08 16:25:40,070 - No IPv4 address found on anpi1 !
-2024-06-08 16:25:40,073 - more No IPv4 address found on en3 !
