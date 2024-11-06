@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Portal</title>
+    <title>Admin Login</title>
     <style>
         /* 공통 스타일 */
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background-color: #e0eaf7;
             margin: 0;
             padding: 0;
             display: flex;
@@ -18,44 +18,85 @@
         }
         .container {
             background-color: #fff;
-            padding: 20px;
+            padding: 60px; /* 패딩 조정 */
+            height: 350px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
+            width: 400px; /* 너비 조정 */
             text-align: center;
+            margin-left: 1000px;
         }
+
+        .input-group {
+            background-color: #ffffffae;
+            padding: 20px; /* 패딩 조정 */
+            margin-right: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px; /* 버튼과의 간격 추가 */
+        }
+
         h1 {
             color: #333;
         }
+
         input, button {
-            width: 100%;
-            padding: 10px;
+            width: 100%; /* 너비를 100%로 설정 */
+            padding: 15px; /* 패딩 조정 */
             margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            text-align: center;
+            display: block; /* 블록 요소로 설정 */
         }
+
         button {
-            background-color: #28a745;
+            width: 95%;
+            margin-left: 16px;
+            background-color: #000;
             color: white;
             border: none;
             cursor: pointer;
         }
         button:hover {
-            background-color: #218838;
+            background-color: #333; /* 버튼 호버 색상 조정 */
         }
         .error-message {
             color: red;
+            margin-bottom: 10px; /* 에러 메시지와 입력 필드 간격 */
         }
+
+        .image-container {
+            position: absolute; /* 절대 위치 지정 */
+            left: 400px; /* 왼쪽에서의 위치 */
+            top: 50%; /* 세로 중앙 정렬 */
+            transform: translateY(-50%); /* 세로 중앙 정렬을 위한 변환 */
+        }
+
+        .image-container img {
+            width: 400px; /* 이미지 크기 조정 */
+            height: auto; /* 비율 유지 */
+        }
+
+
     </style>
 </head>
 <body>
 
+    <div class="image-container">
+        <img src="static/logo.png">
+    </div>
+
 <!-- 로그인 페이지 -->
 <div class="container" id="login-container">
-    <h1>Admin Login</h1>
-    <div class="error-message" id="error-message"></div>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
+    <div class="header-group"> <!-- 그룹화된 요소 -->
+        <h1>Admin Login</h1>
+        <div class="error-message" id="error-message"></div>
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+    </div>
     <button onclick="login()">Login</button>
 </div>
 
@@ -77,7 +118,7 @@
             // 로그인 성공 시, 로컬 스토리지에 로그인 상태 저장
             localStorage.setItem('loggedIn', true);
             // 관리자 대시보드 페이지로 리다이렉션
-            window.location.href = "http://127.0.0.1:8000/main/";  // 관리자 대시보드 페이지로 이동
+            window.location.href = "http://127.0.0.1:8000/graph/";  // 관리자 대시보드 페이지로 이동
         } else {
             // 로그인 실패 시 에러 메시지 표시
             errorMessage.textContent = "Invalid username or password.";

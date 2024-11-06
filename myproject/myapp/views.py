@@ -108,8 +108,8 @@ def login(request):
 def main(request):
     return render(request, 'main.html')
 
-def test(request):
-    return render(request, 'test.html')
+def regex(request):
+    return render(request, 'regex.html')
 
 def save_regex(request):
     if request.method == 'POST':
@@ -121,3 +121,4 @@ def save_regex(request):
 def test_regex(request):
     # 정규 표현식을 테스트하는 로직을 여기에 추가
     return HttpResponse("Testing regular expression.")  # 임시 응답
+
