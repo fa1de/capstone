@@ -10,8 +10,10 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 from threading import Thread, Event
 from .utils.sniffer import get_interfaces, start_sniffer
-
-
+from django.shortcuts import redirect
+import os
+from django.conf import settings
+import ast
 
 class GraphView(APIView):
     def get(self, request, *args, **kwargs):
@@ -81,22 +83,52 @@ class ProtocolViewSet(viewsets.ModelViewSet):
             save_aggregate(f"pattern<|start|>{protocol_name}-{pattern}")
 
         return response
-
-@csrf_exempt  # CSRF 검증을 비활성화합니다. (필요에 따라 설정 변경 가능)
+    
+@csrf_exempt  # CSRF 토큰 검사를 비활성화 (테스트 환경에서 사용 권장)
 def save_code(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             code = data.get('code')
-            
-            # rules.py 파일에 코드 저장
-            with open('rules.py', 'w') as file:
-                file.write(code)
-            
-            return JsonResponse({"message": "Code saved successfully!"}, status=200)
+
+            # 코드 문법 검사 (간단한 예: ast 모듈을 사용해 구문 오류를 체크)
+            try:
+                ast.parse(code)  # Python 코드의 문법이 유효한지 검사
+            except SyntaxError as e:
+                # 문법 오류 메시지와 라인 번호를 반환
+                return JsonResponse({"message": f"문법 오류: {e.msg} at line {e.lineno}"}, status=400)
+
+            try:
+                exec(code, {})  # 코드 실행해서 오류를 발생시킬 수 있는지 검사
+            except Exception as e:
+                return JsonResponse({"message": f"실행 오류: {str(e)}"}, status=400)
+
+            # rules.py 파일 경로
+            file_path = os.path.join(settings.BASE_DIR, 'myapp', 'utils', 'rules.py')
+
+            # rules.py 파일을 덮어쓰는 방식으로 열기
+            with open(file_path, 'w') as file:
+                file.write(code)  # 새로운 코드로 덮어쓰기
+
+            return JsonResponse({"message": "저장되었습니다.", "code": code}, status=200)  # 저장된 코드도 반환
+
         except Exception as e:
-            return JsonResponse({"message": "Failed to save code", "error": str(e)}, status=500)
+            return JsonResponse({"message": "오류로 인해 저장되지 않았습니다.", "error": str(e)}, status=500)
+
     return JsonResponse({"message": "Invalid request"}, status=400)
+
+def main(request):
+    try:
+        file_path = os.path.join(settings.BASE_DIR, 'myapp', 'utils', 'rules.py')
+
+        # rules.py 파일을 읽어와서 code에 전달
+        with open(file_path, 'r') as file:
+            code = file.read()
+
+        return render(request, 'main.html', {'code': code})
+
+    except Exception as e:
+        return JsonResponse({"message": "파일을 읽을 수 없습니다.", "error": str(e)}, status=500)
 
 class AggregateViewSet(viewsets.ModelViewSet):
     queryset = Aggregate.objects.all()
@@ -104,9 +136,6 @@ class AggregateViewSet(viewsets.ModelViewSet):
 
 def login(request):
     return render(request, 'login.html')
-
-def main(request):
-    return render(request, 'main.html')
 
 def regex(request):
     return render(request, 'regex.html')

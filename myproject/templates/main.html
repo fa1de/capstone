@@ -16,26 +16,29 @@
 </head>
 <body>
 
-
 <div class="header">
     <div class="header-left-container">
         <img src="{% static '/logo.png' %}" width="100" height="40" />
     </div>
-    <div class="header-title">정규표현식 관리</div> <!-- 제목 추가 -->
- </div>
+    <div class="header-title">정규표현식 관리</div>
+</div>
      
- <h2>Edit and Save Python Code</h2>
-<div id="editor"></div>
-<button id="saveButton">Save to rules.py</button>
+<h2>Edit and Save Python Code</h2>
+<div id="editor" style="height: 500px;"></div> <!-- Editor 크기 설정 -->
+<button id="saveButton">Save rules</button>
 
 <!-- Monaco Editor CDN -->
 <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
 <script>
     // Monaco Editor 설정
-    require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@latest/min/vs' }});
+    require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@latest/min/vs' }}); 
     require(['vs/editor/editor.main'], function () {
+        // Django 템플릿에서 받은 코드 값을 JavaScript 변수에 전달
+        var code = "{{ code|escapejs }}";  // Django 템플릿에서의 코드 전달 방식을 수정
+
+        // Monaco Editor 인스턴스 생성
         window.editor = monaco.editor.create(document.getElementById('editor'), {
-            value: "# Write your Python code here...",
+            value: code,  // 초기 코드 값을 템플릿 변수에서 전달받은 값으로 설정
             language: "python",
             theme: "vs-dark"
         });
@@ -43,17 +46,27 @@
 
     // 버튼 클릭 이벤트 리스너
     document.getElementById('saveButton').addEventListener('click', () => {
-        const code = window.editor.getValue();
+        const code = window.editor.getValue(); // Editor에서 현재 코드 추출
         
         // Django 서버로 코드 전송
         fetch('/save-code/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: code })
+            body: JSON.stringify({ code: code })  // 코드 내용 전송
         })
-        .then(response => response.json())
-        .then(data => alert(data.message))
-        .catch(error => console.error('Error:', error));
+        .then(response => response.json())  // 서버 응답 받기
+        .then(data => {
+            if (data.message === "저장되었습니다.") {
+                alert(data.message);  // 저장 완료 메시지
+                location.reload();  // 새로 고침
+            } else {
+                alert(data.message);  // 오류 메시지 출력
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('오류가 발생했습니다. 다시 시도해 주세요.');
+        });
     });
 </script>
 
