@@ -4,7 +4,7 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f9f9f9;
     margin: 0;
-    padding: 20px;
+    padding: 10px;
 }
 
 .header {
@@ -25,13 +25,14 @@ body {
 }
 
 .header-title {
-    font-family: "Do Hyeo", sans-serif;
-    font-size: 27px; /* 제목 크기 */
-    color: #3b3b3b; /* 제목 색상 */
+    font-family: "Do Hyeon", sans-serif;
+    font-size: 35px; /* 제목 크기 */
+    color: #000000; /* 제목 색상 */
     text-align: center; /* 텍스트 중앙 정렬 */
     margin: 0; /* 기본 여백 제거 */
-    font-weight: bold;
+    font-weight: 900;
 }
+
 #editor { 
     width: 95%; 
     height: 580px; 

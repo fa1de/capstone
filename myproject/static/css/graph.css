@@ -1,4 +1,12 @@
 @charset "UTF-8";
+
+body {
+    font-family: "Do Hyeon", sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 20px;
+}
+
 .header {
     width: calc(100%-24px);
     height: 64px;
@@ -179,7 +187,7 @@ tr:hover {
 }
 
 .title{
-    font-size: 16px;
+    font-size: 25px;
     font-weight: bold;
     margin: 0 0 12px 0;
 }
