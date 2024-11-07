@@ -34,5 +34,5 @@ rules = [
     re.compile(
         r"kex_algorithms\s+=\s+(?P<version>[\w\-]+).*encryption_algorithms_client_to_server\s+=\s+(?P<algorithm>[\w\-]+).*user\s+=\s+(?P<username>\w+)",
         re.DOTALL,
-    )
+    ),
 ]

@@ -9,4 +9,4 @@ data/
 .vscode/
 
 # log
-packet_log.txt
+myproject/log/log.txt

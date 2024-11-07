@@ -22,7 +22,7 @@
     require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@latest/min/vs' }});
     require(['vs/editor/editor.main'], function () {
         window.editor = monaco.editor.create(document.getElementById('editor'), {
-            value: "# Write your Python code here...",
+            value: "# Write your Python code here...",  
             language: "python",
             theme: "vs-dark"
         });
