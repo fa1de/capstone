@@ -23,8 +23,8 @@
     <div class="header-title">정규표현식 관리</div>
 </div>
      
-<h2>Edit and Save Python Code</h2>
-<div id="editor" style="height: 500px;"></div> <!-- Editor 크기 설정 -->
+<h1>Edit and Save Python Code</h1>
+<div id="editor" style="height: 650px;"></div> <!-- Editor 크기 설정 -->
 <button id="saveButton">Save rules</button>
 
 <!-- Monaco Editor CDN -->
@@ -40,7 +40,9 @@
         window.editor = monaco.editor.create(document.getElementById('editor'), {
             value: code,  // 초기 코드 값을 템플릿 변수에서 전달받은 값으로 설정
             language: "python",
-            theme: "vs-dark"
+            theme: "vs-dark",
+            fontSize: 18,
+            lineHeight: 24
         });
     });
 
