@@ -146,7 +146,7 @@ function updateChart(charts, data) {
     const sliceLength = 100;
     const modifiedPattern =
       pattern.length > sliceLength
-        ? pattern.slice(0, sliceLength)
+        ? `${pattern.slice(0, sliceLength)}...`
         : pattern;
     tr.innerHTML = `<td>${protocol}</td><td>${modifiedPattern}</td> <td>${p.count}</td>`;
     tbody.appendChild(tr);
