@@ -4,3 +4,7 @@ cap==0.1.4
 Django==5.0.6
 psycopg2-binary==2.9.9
 sqlparse==0.5.0
+djangorestframework
+scapy
+psutil
+requests

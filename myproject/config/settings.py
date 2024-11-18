@@ -1,4 +1,3 @@
-
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -62,10 +61,10 @@ INSTALLED_APPS = [
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "postgres",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
-        "HOST": "localhost",
+        "NAME": "protocol",
+        "USER": "cap",
+        "PASSWORD": "1234",
+        "HOST": "db",
         "PORT": "5432",
     }
 }
