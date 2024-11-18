@@ -19,11 +19,20 @@ async function getChart() {
 
     console.log(key);
     if (key.startsWith("protocol")) {
-      protocols.push({ name: key.split("<|start|>")[1], count: value });
+      protocols.push({
+        name: key.split("<|start|>")[1],
+        count: value,
+      });
     } else if (key.startsWith("ip")) {
-      ips.push({ name: key.split("<|start|>")[1], count: value });
+      ips.push({
+        name: key.split("<|start|>")[1],
+        count: value,
+      });
     } else if (key.startsWith("pattern")) {
-      patterns.push({ name: key.split("<|start|>")[1], count: value });
+      patterns.push({
+        name: key.split("<|start|>")[1],
+        count: value,
+      });
     }
   });
 
@@ -142,13 +151,23 @@ function updateChart(charts, data) {
 
   patterns.slice(0, 20).forEach((p) => {
     const tr = document.createElement("tr");
-    const [protocol, pattern] = p.name.split("-");
+    const splits = p.name.split("-");
+    const [protocol, pattern] = [splits[0], splits.slice(1)];
     const sliceLength = 100;
     const modifiedPattern =
       pattern.length > sliceLength
         ? `${pattern.slice(0, sliceLength)}...`
         : pattern;
-    tr.innerHTML = `<td>${protocol}</td><td>${modifiedPattern}</td> <td>${p.count}</td>`;
+    tr.innerHTML = `<td>${protocol}</td> <td>${modifiedPattern}</td> <td>${
+      p.count
+    }</td> <td>${new Date().toISOString()}</td>`;
     tbody.appendChild(tr);
   });
+}
+
+async function deleteAll() {
+  console.log("======== deleteAll ========");
+  const resP = await fetch("/protocol/delete_all", { method: "DELETE" });
+  const resA = await fetch("/aggregate/delete_all", { method: "DELETE" });
+  console.log(res);
 }

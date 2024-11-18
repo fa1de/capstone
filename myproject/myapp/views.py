@@ -15,6 +15,7 @@ import os
 from django.conf import settings
 import ast
 
+
 class GraphView(APIView):
     def get(self, request, *args, **kwargs):
         return render(request, "graph.html")
@@ -83,20 +84,36 @@ class ProtocolViewSet(viewsets.ModelViewSet):
             save_aggregate(f"pattern<|start|>{protocol_name}-{pattern}")
 
         return response
-    
+
+    @action(detail=False, methods=["delete"])
+    def delete_all(self, request, *args, **kwargs):
+        try:
+            Protocol.objects.all().delete()
+            return JsonResponse(
+                {"message": "Success to delete all protocols."},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return JsonResponse(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 @csrf_exempt  # CSRF 토큰 검사를 비활성화 (테스트 환경에서 사용 권장)
 def save_code(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
             data = json.loads(request.body)
-            code = data.get('code')
+            code = data.get("code")
 
             # 코드 문법 검사 (간단한 예: ast 모듈을 사용해 구문 오류를 체크)
             try:
                 ast.parse(code)  # Python 코드의 문법이 유효한지 검사
             except SyntaxError as e:
                 # 문법 오류 메시지와 라인 번호를 반환
-                return JsonResponse({"message": f"문법 오류: {e.msg} at line {e.lineno}"}, status=400)
+                return JsonResponse(
+                    {"message": f"문법 오류: {e.msg} at line {e.lineno}"}, status=400
+                )
 
             try:
                 exec(code, {})  # 코드 실행해서 오류를 발생시킬 수 있는지 검사
@@ -104,50 +121,75 @@ def save_code(request):
                 return JsonResponse({"message": f"실행 오류: {str(e)}"}, status=400)
 
             # rules.py 파일 경로
-            file_path = os.path.join(settings.BASE_DIR, 'myapp', 'utils', 'rules.py')
+            file_path = os.path.join(settings.BASE_DIR, "myapp", "utils", "rules.py")
 
             # rules.py 파일을 덮어쓰는 방식으로 열기
-            with open(file_path, 'w') as file:
+            with open(file_path, "w") as file:
                 file.write(code)  # 새로운 코드로 덮어쓰기
 
-            return JsonResponse({"message": "저장되었습니다.", "code": code}, status=200)  # 저장된 코드도 반환
+            return JsonResponse(
+                {"message": "저장되었습니다.", "code": code}, status=200
+            )  # 저장된 코드도 반환
 
         except Exception as e:
-            return JsonResponse({"message": "오류로 인해 저장되지 않았습니다.", "error": str(e)}, status=500)
+            return JsonResponse(
+                {"message": "오류로 인해 저장되지 않았습니다.", "error": str(e)},
+                status=500,
+            )
 
     return JsonResponse({"message": "Invalid request"}, status=400)
 
+
 def main(request):
     try:
-        file_path = os.path.join(settings.BASE_DIR, 'myapp', 'utils', 'rules.py')
+        file_path = os.path.join(settings.BASE_DIR, "myapp", "utils", "rules.py")
 
         # rules.py 파일을 읽어와서 code에 전달
-        with open(file_path, 'r') as file:
+        with open(file_path, "r") as file:
             code = file.read()
 
-        return render(request, 'main.html', {'code': code})
+        return render(request, "main.html", {"code": code})
 
     except Exception as e:
-        return JsonResponse({"message": "파일을 읽을 수 없습니다.", "error": str(e)}, status=500)
+        return JsonResponse(
+            {"message": "파일을 읽을 수 없습니다.", "error": str(e)}, status=500
+        )
+
 
 class AggregateViewSet(viewsets.ModelViewSet):
     queryset = Aggregate.objects.all()
     serializer_class = AggregateSerializer
 
+    @action(detail=False, methods=["delete"])
+    def delete_all(self, request, *args, **kwargs):
+        try:
+            Aggregate.objects.all().delete()
+            return JsonResponse(
+                {"message": "Success to delete all protocols."},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return JsonResponse(
+                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 def login(request):
-    return render(request, 'login.html')
+    return render(request, "login.html")
+
 
 def regex(request):
-    return render(request, 'regex.html')
+    return render(request, "regex.html")
+
 
 def save_regex(request):
-    if request.method == 'POST':
-        name = request.POST.get('name')
-        pattern = request.POST.get('pattern')
+    if request.method == "POST":
+        name = request.POST.get("name")
+        pattern = request.POST.get("pattern")
         # 여기에 정규 표현식을 저장하는 로직 추가
-        return redirect('main_page')  # 메인 페이지로 리다이렉션
+        return redirect("main_page")  # 메인 페이지로 리다이렉션
+
 
 def test_regex(request):
     # 정규 표현식을 테스트하는 로직을 여기에 추가
     return HttpResponse("Testing regular expression.")  # 임시 응답
-
