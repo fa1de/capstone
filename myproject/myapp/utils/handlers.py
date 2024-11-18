@@ -4,7 +4,6 @@ from dataclasses import dataclass, asdict
 from .rules import rules
 from .extractor import extract_packet
 from .sender import send_to_server
-from .rules import rules
 from .logger import logger
 
 
